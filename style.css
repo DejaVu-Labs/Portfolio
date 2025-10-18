@@ -120,6 +120,11 @@ body {
     background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 }
 
+.button-icon.dpad {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-size: 18px;
+}
+
 /* Полноэкранное модальное окно */
 .fullscreen-modal {
     display: none;

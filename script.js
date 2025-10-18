@@ -218,23 +218,23 @@ function createButtons() {
         roughness: 0.3
     });
 
-    // Круг (O) - справа
+    // Круг (O) - справа (листать изображения вперед в проекте)
     const circleGeometry = new THREE.CylinderGeometry(0.25, 0.25, 0.15, 32);
     const circleMaterial = buttonMaterial.clone();
     circleMaterial.color.setHex(0xf5576c);
     buttons.circle = new THREE.Mesh(circleGeometry, circleMaterial);
     buttons.circle.rotation.x = Math.PI / 2;
     buttons.circle.position.set(3.9, -0.8, 0.65);
-    buttons.circle.userData = { type: 'circle', action: 'next' };
+    buttons.circle.userData = { type: 'circle', action: 'nextImage' };
     psp.add(buttons.circle);
 
-    // Квадрат (□) - слева
+    // Квадрат (□) - слева (листать изображения назад в проекте)
     const squareGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.15);
     const squareMaterial = buttonMaterial.clone();
     squareMaterial.color.setHex(0x00f2fe);
     buttons.square = new THREE.Mesh(squareGeometry, squareMaterial);
     buttons.square.position.set(3.1, -0.8, 0.65);
-    buttons.square.userData = { type: 'square', action: 'prev' };
+    buttons.square.userData = { type: 'square', action: 'prevImage' };
     psp.add(buttons.square);
 
     // Треугольник (△) - сверху
@@ -277,36 +277,40 @@ function createButtons() {
     dpadMaterial.color.setHex(0x444444);
     
     // Верх
-    const dpadUp = new THREE.Mesh(
+    buttons.dpadUp = new THREE.Mesh(
         new THREE.BoxGeometry(0.3, 0.4, 0.15),
         dpadMaterial
     );
-    dpadUp.position.set(-3.5, -0.3, 0.65);
-    psp.add(dpadUp);
+    buttons.dpadUp.position.set(-3.5, -0.3, 0.65);
+    buttons.dpadUp.userData = { type: 'dpadUp', action: 'none' };
+    psp.add(buttons.dpadUp);
 
     // Низ
-    const dpadDown = new THREE.Mesh(
+    buttons.dpadDown = new THREE.Mesh(
         new THREE.BoxGeometry(0.3, 0.4, 0.15),
         dpadMaterial
     );
-    dpadDown.position.set(-3.5, -1.3, 0.65);
-    psp.add(dpadDown);
+    buttons.dpadDown.position.set(-3.5, -1.3, 0.65);
+    buttons.dpadDown.userData = { type: 'dpadDown', action: 'none' };
+    psp.add(buttons.dpadDown);
 
     // Лево
-    const dpadLeft = new THREE.Mesh(
+    buttons.dpadLeft = new THREE.Mesh(
         new THREE.BoxGeometry(0.4, 0.3, 0.15),
         dpadMaterial
     );
-    dpadLeft.position.set(-4.0, -0.8, 0.65);
-    psp.add(dpadLeft);
+    buttons.dpadLeft.position.set(-4.0, -0.8, 0.65);
+    buttons.dpadLeft.userData = { type: 'dpadLeft', action: 'prev' };
+    psp.add(buttons.dpadLeft);
 
     // Право
-    const dpadRight = new THREE.Mesh(
+    buttons.dpadRight = new THREE.Mesh(
         new THREE.BoxGeometry(0.4, 0.3, 0.15),
         dpadMaterial
     );
-    dpadRight.position.set(-3.0, -0.8, 0.65);
-    psp.add(dpadRight);
+    buttons.dpadRight.position.set(-3.0, -0.8, 0.65);
+    buttons.dpadRight.userData = { type: 'dpadRight', action: 'next' };
+    psp.add(buttons.dpadRight);
 }
 
 // Обновление текстуры экрана
@@ -394,7 +398,11 @@ function handleInteraction(event) {
         buttons.circle,
         buttons.square,
         buttons.triangle,
-        buttons.cross
+        buttons.cross,
+        buttons.dpadUp,
+        buttons.dpadDown,
+        buttons.dpadLeft,
+        buttons.dpadRight
     ];
 
     const intersects = raycaster.intersectObjects(buttonObjects, true);
@@ -425,9 +433,9 @@ function handleButtonClick(action) {
         // Действия в режиме просмотра проекта
         if (action === 'back') {
             closeProjectView();
-        } else if (action === 'next') {
+        } else if (action === 'nextImage') {
             nextImage();
-        } else if (action === 'prev') {
+        } else if (action === 'prevImage') {
             prevImage();
         }
     } else {
