@@ -191,13 +191,13 @@ function createPSP() {
     });
 
     // Левая панель с D-pad
-    const leftPanelGeometry = new THREE.BoxGeometry(1.5, 1.5, 0.3);
+    const leftPanelGeometry = new THREE.BoxGeometry(1.8, 1.8, 0.3);
     const leftPanel = new THREE.Mesh(leftPanelGeometry, frameMaterial);
     leftPanel.position.set(-3.5, -0.8, 0.5);
     psp.add(leftPanel);
 
     // Правая панель с кнопками
-    const rightPanelGeometry = new THREE.BoxGeometry(1.5, 1.5, 0.3);
+    const rightPanelGeometry = new THREE.BoxGeometry(1.8, 1.8, 0.3);
     const rightPanel = new THREE.Mesh(rightPanelGeometry, frameMaterial);
     rightPanel.position.set(3.5, -0.8, 0.5);
     psp.add(rightPanel);
