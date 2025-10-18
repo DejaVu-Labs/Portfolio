@@ -387,17 +387,19 @@ function handleInteraction(event) {
     if (intersects.length > 0) {
         const button = intersects[0].object;
         let userData = button.userData;
+        let buttonToAnimate = button;
         
         // Если это группа (крестик), получаем userData из родителя
         if (!userData.action && button.parent.userData.action) {
             userData = button.parent.userData;
+            buttonToAnimate = button.parent; // Анимируем всю группу
         }
 
         console.log('Нажата кнопка:', userData.action, 'тип события:', event.type);
         handleButtonClick(userData.action);
         
         // Анимация нажатия
-        animateButtonPress(button);
+        animateButtonPress(buttonToAnimate);
     }
 }
 
