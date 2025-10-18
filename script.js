@@ -3,6 +3,7 @@ let scene, camera, renderer, psp, screen, buttons = {};
 let currentProjectIndex = 0;
 let isProjectViewMode = false;
 let currentImageIndex = 0;
+let projectScreens = []; // Массив для хранения 3 экранов проектов
 
 // Функция создания placeholder изображения
 function createPlaceholderImage(width, height, color, text) {
@@ -168,20 +169,20 @@ function createPSP() {
     body.castShadow = true;
     psp.add(body);
 
-    // Экран PSP
-    const screenGeometry = new THREE.BoxGeometry(4.8, 2.72, 0.1);
+    // Экран PSP (фон) - теперь плоский и позади экранов проектов
+    const screenGeometry = new THREE.PlaneGeometry(4.8, 2.72);
     const screenMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0x333333,
+        color: 0x1a1a1a,
         side: THREE.DoubleSide
     });
     screen = new THREE.Mesh(screenGeometry, screenMaterial);
-    screen.position.set(0, 0.5, 0.45);
+    screen.position.set(0, 0.5, 0.44);
     psp.add(screen);
 
-    console.log('Экран PSP создан, загружаем текстуру...');
+    console.log('Экран PSP создан, создаем экраны проектов...');
 
-    // Текстура на экран (галерея)
-    updateScreenTexture();
+    // Создание 3 экранов для проектов (левый, центральный, правый)
+    createProjectScreens();
 
     // Рамка экрана
     const frameMaterial = new THREE.MeshStandardMaterial({
@@ -313,44 +314,145 @@ function createButtons() {
     psp.add(buttons.dpadRight);
 }
 
-// Обновление текстуры экрана
-function updateScreenTexture() {
-    const currentProject = projects[currentProjectIndex];
+// Создание экранов для отображения проектов
+function createProjectScreens() {
+    // Размеры экранов (уменьшены для лучшего размещения)
+    const centerWidth = 1.6;
+    const centerHeight = 1.2;
+    const sideWidth = 1.1;
+    const sideHeight = 0.825;
     
-    let imageUrl;
-    if (isProjectViewMode) {
-        // Показываем текущее изображение проекта
-        imageUrl = currentProject.images[currentImageIndex];
-        console.log('Режим просмотра проекта, изображение:', currentImageIndex + 1);
-    } else {
-        // Показываем превью галереи
-        imageUrl = currentProject.thumbnail;
-        console.log('Режим галереи, проект:', currentProject.name);
+    // Позиции экранов
+    const positions = [
+        { x: -1.6, y: 0.5, width: sideWidth, height: sideHeight }, // Левый
+        { x: 0, y: 0.5, width: centerWidth, height: centerHeight }, // Центральный
+        { x: 1.6, y: 0.5, width: sideWidth, height: sideHeight }   // Правый
+    ];
+    
+    // Создаем 3 экрана
+    for (let i = 0; i < 3; i++) {
+        const pos = positions[i];
+        const geometry = new THREE.PlaneGeometry(pos.width, pos.height);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: i === 1 ? 1.0 : 0.6 // Центральный ярче
+        });
+        
+        const projectScreen = new THREE.Mesh(geometry, material);
+        projectScreen.position.set(pos.x, pos.y, 0.46);
+        psp.add(projectScreen);
+        
+        projectScreens.push({
+            mesh: projectScreen,
+            baseWidth: pos.width,
+            baseHeight: pos.height,
+            baseX: pos.x
+        });
     }
     
-    // Загружаем текстуру с улучшенными настройками
+    // Начальная загрузка текстур
+    updateProjectScreens();
+}
+
+// Обновление текстур экранов проектов
+function updateProjectScreens() {
+    if (isProjectViewMode) {
+        // В режиме просмотра показываем одно большое изображение
+        updateProjectViewScreen();
+    } else {
+        // В режиме галереи показываем 3 проекта
+        updateGalleryScreens();
+    }
+}
+
+// Обновление экрана в режиме просмотра проекта
+function updateProjectViewScreen() {
+    const currentProject = projects[currentProjectIndex];
+    const imageUrl = currentProject.images[currentImageIndex];
+    
+    console.log('Режим просмотра проекта, изображение:', currentImageIndex + 1);
+    
+    // Скрываем боковые экраны
+    projectScreens[0].mesh.visible = false;
+    projectScreens[2].mesh.visible = false;
+    
+    // Показываем только центральный экран
+    projectScreens[1].mesh.visible = true;
+    projectScreens[1].mesh.scale.set(1.5, 1.5, 1);
+    
     const loader = new THREE.TextureLoader();
     loader.load(
         imageUrl,
         (texture) => {
-            console.log('✓ Текстура загружена успешно');
-            // Настройки для более четкого отображения
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
-            texture.anisotropy = renderer.capabilities.getMaxAnisotropy(); // Максимальная анизотропная фильтрация
+            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
             texture.needsUpdate = true;
             
-            screen.material = new THREE.MeshBasicMaterial({ 
+            projectScreens[1].mesh.material = new THREE.MeshBasicMaterial({
                 map: texture,
                 side: THREE.DoubleSide
             });
-            screen.material.needsUpdate = true;
+            projectScreens[1].mesh.material.needsUpdate = true;
         },
         undefined,
         (error) => {
             console.error('✗ Ошибка загрузки текстуры:', error);
         }
     );
+}
+
+// Обновление экранов в режиме галереи
+function updateGalleryScreens() {
+    console.log('Режим галереи, текущий проект:', currentProjectIndex);
+    
+    // Показываем все 3 экрана
+    projectScreens.forEach((screen, index) => {
+        screen.mesh.visible = true;
+        screen.mesh.scale.set(1, 1, 1);
+    });
+    
+    // Определяем индексы проектов для отображения
+    const indices = [
+        (currentProjectIndex - 1 + projects.length) % projects.length, // Левый
+        currentProjectIndex,                                             // Центральный
+        (currentProjectIndex + 1) % projects.length                      // Правый
+    ];
+    
+    // Загружаем текстуры для каждого экрана
+    indices.forEach((projectIndex, screenIndex) => {
+        const project = projects[projectIndex];
+        const loader = new THREE.TextureLoader();
+        
+        loader.load(
+            project.thumbnail,
+            (texture) => {
+                texture.minFilter = THREE.LinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                texture.needsUpdate = true;
+                
+                projectScreens[screenIndex].mesh.material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: screenIndex === 1 ? 1.0 : 0.6
+                });
+                projectScreens[screenIndex].mesh.material.needsUpdate = true;
+            },
+            undefined,
+            (error) => {
+                console.error('✗ Ошибка загрузки текстуры:', error);
+            }
+        );
+    });
+}
+
+// Обратная совместимость - старая функция вызывает новую
+function updateScreenTexture() {
+    updateProjectScreens();
 }
 
 // Универсальная функция получения координат
