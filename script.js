@@ -624,17 +624,11 @@ function startGalleryAnimation(direction) {
     }
     
     // Устанавливаем целевые масштабы и прозрачность
-    // После смещения центральный экран будет другим
+    // После завершения анимации экраны вернутся в стандартные позиции,
+    // поэтому центральный (index=1) всегда большой, боковые (index=0,2) - маленькие
     projectScreens.forEach((screen, index) => {
-        let targetIndex = index;
-        if (direction === 'next') {
-            targetIndex = index + 1; // Правый становится центральным
-        } else if (direction === 'prev') {
-            targetIndex = index - 1; // Левый становится центральным
-        }
-        
-        screen.targetScale = (targetIndex === 1) ? 1.0 : 0.8;
-        screen.targetOpacity = (targetIndex === 1) ? 1.0 : 0.6;
+        screen.targetScale = (index === 1) ? 1.0 : 0.8;
+        screen.targetOpacity = (index === 1) ? 1.0 : 0.6;
     });
     
     isAnimating = true;
