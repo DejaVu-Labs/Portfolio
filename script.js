@@ -1,7 +1,7 @@
 // Инициализация сцены Three.js
 let scene, camera, renderer, psp, screen, buttons = {};
 let currentProjectIndex = 0;
-let isFullscreenMode = false;
+let isProjectViewMode = false;
 let currentImageIndex = 0;
 
 // Данные проектов
@@ -105,9 +105,6 @@ function init() {
     // Обработчики событий
     window.addEventListener('resize', onWindowResize);
     canvas.addEventListener('click', onCanvasClick);
-    
-    // Модальное окно
-    setupModalControls();
 
     // Анимация
     animate();
@@ -268,7 +265,16 @@ function updateScreenTexture() {
     const loader = new THREE.TextureLoader();
     const currentProject = projects[currentProjectIndex];
     
-    loader.load(currentProject.thumbnail, (texture) => {
+    let imageUrl;
+    if (isProjectViewMode) {
+        // Показываем текущее изображение проекта
+        imageUrl = currentProject.images[currentImageIndex];
+    } else {
+        // Показываем превью галереи
+        imageUrl = currentProject.thumbnail;
+    }
+    
+    loader.load(imageUrl, (texture) => {
         screen.material = new THREE.MeshBasicMaterial({ map: texture });
     });
 }
@@ -311,10 +317,10 @@ function onCanvasClick(event) {
 
 // Обработка нажатий кнопок
 function handleButtonClick(action) {
-    if (isFullscreenMode) {
-        // Действия в полноэкранном режиме
+    if (isProjectViewMode) {
+        // Действия в режиме просмотра проекта
         if (action === 'back') {
-            closeFullscreen();
+            closeProjectView();
         } else if (action === 'next') {
             nextImage();
         } else if (action === 'prev') {
@@ -327,7 +333,7 @@ function handleButtonClick(action) {
         } else if (action === 'prev') {
             prevProject();
         } else if (action === 'open') {
-            openFullscreen();
+            openProjectView();
         }
     }
 }
@@ -343,49 +349,29 @@ function prevProject() {
     updateScreenTexture();
 }
 
-// Полноэкранный режим
-function openFullscreen() {
-    isFullscreenMode = true;
+// Режим просмотра проекта
+function openProjectView() {
+    isProjectViewMode = true;
     currentImageIndex = 0;
-    const modal = document.getElementById('fullscreen-modal');
-    const project = projects[currentProjectIndex];
-    
-    document.getElementById('modal-title').textContent = project.name;
-    document.getElementById('modal-desc-text').textContent = project.description;
-    updateModalImage();
-    
-    modal.classList.add('active');
+    updateScreenTexture();
 }
 
-function closeFullscreen() {
-    isFullscreenMode = false;
-    const modal = document.getElementById('fullscreen-modal');
-    modal.classList.remove('active');
-}
-
-function updateModalImage() {
-    const project = projects[currentProjectIndex];
-    const img = document.getElementById('modal-image');
-    img.src = project.images[currentImageIndex];
+function closeProjectView() {
+    isProjectViewMode = false;
+    currentImageIndex = 0;
+    updateScreenTexture();
 }
 
 function nextImage() {
     const project = projects[currentProjectIndex];
     currentImageIndex = (currentImageIndex + 1) % project.images.length;
-    updateModalImage();
+    updateScreenTexture();
 }
 
 function prevImage() {
     const project = projects[currentProjectIndex];
     currentImageIndex = (currentImageIndex - 1 + project.images.length) % project.images.length;
-    updateModalImage();
-}
-
-// Настройка управления модальным окном
-function setupModalControls() {
-    document.getElementById('modal-close').addEventListener('click', closeFullscreen);
-    document.getElementById('modal-next').addEventListener('click', nextImage);
-    document.getElementById('modal-prev').addEventListener('click', prevImage);
+    updateScreenTexture();
 }
 
 // Анимация нажатия кнопки
