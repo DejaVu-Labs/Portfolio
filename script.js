@@ -197,8 +197,8 @@ function createPSP() {
     // Создание кнопок
     createButtons();
 
-    // Увеличение размера PSP в 3 раза
-    psp.scale.set(3, 3, 3);
+    // Увеличение размера PSP в 7 раз
+    psp.scale.set(7, 7, 7);
 
     scene.add(psp);
 }
