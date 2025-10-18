@@ -466,6 +466,41 @@ function updateProjectViewScreen() {
     );
 }
 
+// Загрузка текстуры проекта на конкретный экран
+function loadProjectTexture(screenIndex, projectIndex) {
+    const project = projects[projectIndex];
+    const loader = new THREE.TextureLoader();
+    
+    loader.load(
+        project.thumbnail,
+        (texture) => {
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            texture.needsUpdate = true;
+            
+            // Сохраняем текущую прозрачность
+            const currentOpacity = projectScreens[screenIndex].mesh.material ? 
+                projectScreens[screenIndex].mesh.material.opacity : 
+                projectScreens[screenIndex].targetOpacity;
+            
+            projectScreens[screenIndex].mesh.material = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: currentOpacity,
+                clippingPlanes: clippingPlanes,
+                clipShadows: true
+            });
+            projectScreens[screenIndex].mesh.material.needsUpdate = true;
+        },
+        undefined,
+        (error) => {
+            console.error('✗ Ошибка загрузки текстуры:', error);
+        }
+    );
+}
+
 // Обновление экранов в режиме галереи
 function updateGalleryScreens(direction) {
     console.log('Режим галереи, текущий проект:', currentProjectIndex, 'направление:', direction);
@@ -709,11 +744,17 @@ function startGalleryAnimation(direction) {
         screen.targetOpacity = (index === 1) ? 1.0 : 0.6;
     });
     
+    // Загружаем текстуру ТОЛЬКО на входящий экран до начала анимации
+    if (direction === 'next') {
+        // Загружаем новый проект на правый экран (index=2)
+        loadProjectTexture(2, currentProjectIndex);
+    } else if (direction === 'prev') {
+        // Загружаем новый проект на левый экран (index=0)
+        loadProjectTexture(0, currentProjectIndex);
+    }
+    
     isAnimating = true;
     animationStartTime = performance.now();
-    
-    // Обновляем текстуры для новых проектов с учетом направления
-    updateGalleryScreens(direction);
     
     // Логируем параметры анимации
     projectScreens.forEach((screen, index) => {
@@ -802,6 +843,11 @@ function updateGalleryAnimation() {
                 screen.currentOpacity = screen.targetOpacity;
             }
         });
+        
+        // Обновляем текстуры всех экранов после завершения анимации
+        loadProjectTexture(0, (currentProjectIndex - 1 + projects.length) % projects.length); // Левый
+        loadProjectTexture(1, currentProjectIndex); // Центральный
+        loadProjectTexture(2, (currentProjectIndex + 1) % projects.length); // Правый
         
         return;
     }
