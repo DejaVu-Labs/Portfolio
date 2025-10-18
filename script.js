@@ -141,6 +141,13 @@ function init() {
     canvas.addEventListener('click', onCanvasClick);
     canvas.addEventListener('touchstart', onTouchStart);
 
+    // Обработчик закрытия подсказки
+    const closeHintBtn = document.getElementById('close-hint');
+    const controlsHint = document.getElementById('controls-hint');
+    closeHintBtn.addEventListener('click', () => {
+        controlsHint.classList.add('hidden');
+    });
+
     // Анимация
     animate();
 }
