@@ -192,13 +192,13 @@ function createPSP() {
     // Левая панель с D-pad
     const leftPanelGeometry = new THREE.BoxGeometry(1.5, 1.5, 0.3);
     const leftPanel = new THREE.Mesh(leftPanelGeometry, frameMaterial);
-    leftPanel.position.set(-2.8, -0.8, 0.5);
+    leftPanel.position.set(-3.5, -0.8, 0.5);
     psp.add(leftPanel);
 
     // Правая панель с кнопками
     const rightPanelGeometry = new THREE.BoxGeometry(1.5, 1.5, 0.3);
     const rightPanel = new THREE.Mesh(rightPanelGeometry, frameMaterial);
-    rightPanel.position.set(2.8, -0.8, 0.5);
+    rightPanel.position.set(3.5, -0.8, 0.5);
     psp.add(rightPanel);
 
     // Создание кнопок
@@ -223,7 +223,7 @@ function createButtons() {
     circleMaterial.color.setHex(0xf5576c);
     buttons.circle = new THREE.Mesh(circleGeometry, circleMaterial);
     buttons.circle.rotation.x = Math.PI / 2;
-    buttons.circle.position.set(3.2, -0.8, 0.65);
+    buttons.circle.position.set(3.9, -0.8, 0.65);
     buttons.circle.userData = { type: 'circle', action: 'next' };
     psp.add(buttons.circle);
 
@@ -232,7 +232,7 @@ function createButtons() {
     const squareMaterial = buttonMaterial.clone();
     squareMaterial.color.setHex(0x00f2fe);
     buttons.square = new THREE.Mesh(squareGeometry, squareMaterial);
-    buttons.square.position.set(2.4, -0.8, 0.65);
+    buttons.square.position.set(3.1, -0.8, 0.65);
     buttons.square.userData = { type: 'square', action: 'prev' };
     psp.add(buttons.square);
 
@@ -249,7 +249,7 @@ function createButtons() {
     const triangleMaterial = buttonMaterial.clone();
     triangleMaterial.color.setHex(0x38f9d7);
     buttons.triangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
-    buttons.triangle.position.set(2.8, -0.3, 0.65);
+    buttons.triangle.position.set(3.5, -0.3, 0.65);
     buttons.triangle.userData = { type: 'triangle', action: 'open' };
     psp.add(buttons.triangle);
 
@@ -266,7 +266,7 @@ function createButtons() {
     buttons.cross = new THREE.Group();
     buttons.cross.add(cross1);
     buttons.cross.add(cross2);
-    buttons.cross.position.set(2.8, -1.3, 0.65);
+    buttons.cross.position.set(3.5, -1.3, 0.65);
     buttons.cross.userData = { type: 'cross', action: 'back' };
     psp.add(buttons.cross);
 
@@ -279,7 +279,7 @@ function createButtons() {
         new THREE.BoxGeometry(0.3, 0.4, 0.1),
         dpadMaterial
     );
-    dpadUp.position.set(-2.8, -0.3, 0.65);
+    dpadUp.position.set(-3.5, -0.3, 0.65);
     psp.add(dpadUp);
 
     // Низ
@@ -287,7 +287,7 @@ function createButtons() {
         new THREE.BoxGeometry(0.3, 0.4, 0.1),
         dpadMaterial
     );
-    dpadDown.position.set(-2.8, -1.3, 0.65);
+    dpadDown.position.set(-3.5, -1.3, 0.65);
     psp.add(dpadDown);
 
     // Лево
@@ -295,7 +295,7 @@ function createButtons() {
         new THREE.BoxGeometry(0.4, 0.3, 0.1),
         dpadMaterial
     );
-    dpadLeft.position.set(-3.3, -0.8, 0.65);
+    dpadLeft.position.set(-4.0, -0.8, 0.65);
     psp.add(dpadLeft);
 
     // Право
@@ -303,7 +303,7 @@ function createButtons() {
         new THREE.BoxGeometry(0.4, 0.3, 0.1),
         dpadMaterial
     );
-    dpadRight.position.set(-2.3, -0.8, 0.65);
+    dpadRight.position.set(-3.0, -0.8, 0.65);
     psp.add(dpadRight);
 }
 
