@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Dev Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="controls-hint" class="controls-hint">
+        <h3>Управление</h3>
+        <div class="hint-item">
+            <span class="button-icon circle">○</span>
+            <span>Следующий / Листать вперед</span>
+        </div>
+        <div class="hint-item">
+            <span class="button-icon square">□</span>
+            <span>Предыдущий / Листать назад</span>
+        </div>
+        <div class="hint-item">
+            <span class="button-icon triangle">△</span>
+            <span>Открыть проект</span>
+        </div>
+        <div class="hint-item">
+            <span class="button-icon cross">✕</span>
+            <span>Вернуться в галерею</span>
+        </div>
+    </div>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
