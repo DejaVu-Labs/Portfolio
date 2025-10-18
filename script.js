@@ -4,6 +4,14 @@ let currentProjectIndex = 0;
 let isProjectViewMode = false;
 let currentImageIndex = 0;
 let projectScreens = []; // Массив для хранения 3 экранов проектов
+let isAnimating = false; // Флаг анимации
+let animationStartTime = 0; // Время начала анимации
+let animationDuration = 400; // Длительность анимации в миллисекундах
+
+// Функция плавности (easing) для анимации
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 // Функция создания placeholder изображения
 function createPlaceholderImage(width, height, color, text) {
@@ -342,13 +350,24 @@ function createProjectScreens() {
         
         const projectScreen = new THREE.Mesh(geometry, material);
         projectScreen.position.set(pos.x, pos.y, 0.46);
+        
+        // Устанавливаем начальный масштаб (боковые меньше)
+        const initialScale = i === 1 ? 1.0 : 0.8;
+        projectScreen.scale.set(initialScale, initialScale, 1);
+        
         psp.add(projectScreen);
         
         projectScreens.push({
             mesh: projectScreen,
             baseWidth: pos.width,
             baseHeight: pos.height,
-            baseX: pos.x
+            baseX: pos.x,
+            currentX: pos.x,
+            targetX: pos.x,
+            currentScale: i === 1 ? 1.0 : 0.8,
+            targetScale: i === 1 ? 1.0 : 0.8,
+            currentOpacity: i === 1 ? 1.0 : 0.6,
+            targetOpacity: i === 1 ? 1.0 : 0.6
         });
     }
     
@@ -411,7 +430,6 @@ function updateGalleryScreens() {
     // Показываем все 3 экрана
     projectScreens.forEach((screen, index) => {
         screen.mesh.visible = true;
-        screen.mesh.scale.set(1, 1, 1);
     });
     
     // Определяем индексы проектов для отображения
@@ -434,11 +452,16 @@ function updateGalleryScreens() {
                 texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
                 texture.needsUpdate = true;
                 
+                // Сохраняем текущую прозрачность если материал уже существует
+                const currentOpacity = projectScreens[screenIndex].mesh.material ? 
+                    projectScreens[screenIndex].mesh.material.opacity : 
+                    projectScreens[screenIndex].targetOpacity;
+                
                 projectScreens[screenIndex].mesh.material = new THREE.MeshBasicMaterial({
                     map: texture,
                     side: THREE.DoubleSide,
                     transparent: true,
-                    opacity: screenIndex === 1 ? 1.0 : 0.6
+                    opacity: currentOpacity
                 });
                 projectScreens[screenIndex].mesh.material.needsUpdate = true;
             },
@@ -554,13 +577,78 @@ function handleButtonClick(action) {
 
 // Навигация по проектам
 function nextProject() {
+    if (isAnimating) return; // Блокируем переключение во время анимации
     currentProjectIndex = (currentProjectIndex + 1) % projects.length;
-    updateScreenTexture();
+    startGalleryAnimation('next');
 }
 
 function prevProject() {
+    if (isAnimating) return; // Блокируем переключение во время анимации
     currentProjectIndex = (currentProjectIndex - 1 + projects.length) % projects.length;
-    updateScreenTexture();
+    startGalleryAnimation('prev');
+}
+
+// Запуск анимации перехода между проектами
+function startGalleryAnimation(direction) {
+    if (isProjectViewMode) {
+        // В режиме просмотра проекта анимация не нужна
+        updateScreenTexture();
+        return;
+    }
+    
+    console.log('Запуск анимации галереи, проект:', currentProjectIndex, 'направление:', direction);
+    
+    // Расстояние между экранами
+    const screenDistance = 1.6;
+    
+    // Сохраняем текущие параметры перед началом анимации
+    projectScreens.forEach((screen, index) => {
+        screen.currentX = screen.mesh.position.x;
+        screen.currentScale = screen.mesh.scale.x;
+        screen.currentOpacity = screen.mesh.material ? screen.mesh.material.opacity : (index === 1 ? 1.0 : 0.6);
+    });
+    
+    // Устанавливаем целевые позиции в зависимости от направления
+    const positions = [-screenDistance, 0, screenDistance];
+    
+    if (direction === 'next') {
+        // При следующем все экраны смещаются влево
+        projectScreens.forEach((screen, index) => {
+            screen.targetX = positions[index] - screenDistance;
+        });
+    } else if (direction === 'prev') {
+        // При предыдущем все экраны смещаются вправо
+        projectScreens.forEach((screen, index) => {
+            screen.targetX = positions[index] + screenDistance;
+        });
+    }
+    
+    // Устанавливаем целевые масштабы и прозрачность
+    // После смещения центральный экран будет другим
+    projectScreens.forEach((screen, index) => {
+        let targetIndex = index;
+        if (direction === 'next') {
+            targetIndex = index + 1; // Правый становится центральным
+        } else if (direction === 'prev') {
+            targetIndex = index - 1; // Левый становится центральным
+        }
+        
+        screen.targetScale = (targetIndex === 1) ? 1.0 : 0.8;
+        screen.targetOpacity = (targetIndex === 1) ? 1.0 : 0.6;
+    });
+    
+    isAnimating = true;
+    animationStartTime = performance.now();
+    
+    // Обновляем текстуры для новых проектов
+    updateGalleryScreens();
+    
+    // Логируем параметры анимации
+    projectScreens.forEach((screen, index) => {
+        console.log(`Экран ${index}: currentX=${screen.currentX.toFixed(2)}, targetX=${screen.targetX.toFixed(2)}, scale: ${screen.currentScale.toFixed(2)} → ${screen.targetScale}`);
+    });
+    
+    console.log('Анимация началась, isAnimating:', isAnimating);
 }
 
 // Режим просмотра проекта
@@ -613,9 +701,65 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+// Обновление анимации галереи
+function updateGalleryAnimation() {
+    if (!isAnimating) return;
+    
+    // Вычисляем прогресс на основе времени
+    const currentTime = performance.now();
+    const elapsed = currentTime - animationStartTime;
+    let progress = elapsed / animationDuration;
+    
+    if (progress >= 1.0) {
+        progress = 1.0;
+        isAnimating = false;
+        console.log('Анимация завершена');
+        
+        // После завершения анимации возвращаем экраны в стандартные позиции
+        const positions = [-1.6, 0, 1.6];
+        projectScreens.forEach((screen, index) => {
+            screen.mesh.position.x = positions[index];
+            screen.currentX = positions[index];
+            screen.targetX = positions[index];
+            
+            screen.mesh.scale.set(screen.targetScale, screen.targetScale, 1);
+            screen.currentScale = screen.targetScale;
+            
+            if (screen.mesh.material) {
+                screen.mesh.material.opacity = screen.targetOpacity;
+                screen.currentOpacity = screen.targetOpacity;
+            }
+        });
+        
+        return;
+    }
+    
+    const eased = easeInOutCubic(progress);
+    
+    // Обновляем позиции, масштаб и прозрачность для каждого экрана
+    projectScreens.forEach((screen, index) => {
+        // Интерполируем позицию X
+        const newX = screen.currentX + (screen.targetX - screen.currentX) * eased;
+        screen.mesh.position.x = newX;
+        
+        // Интерполируем масштаб
+        const newScale = screen.currentScale + (screen.targetScale - screen.currentScale) * eased;
+        screen.mesh.scale.set(newScale, newScale, 1);
+        
+        // Интерполируем прозрачность
+        const newOpacity = screen.currentOpacity + (screen.targetOpacity - screen.currentOpacity) * eased;
+        if (screen.mesh.material) {
+            screen.mesh.material.opacity = newOpacity;
+        }
+    });
+}
+
 // Анимационный цикл
 function animate() {
     requestAnimationFrame(animate);
+    
+    // Обновляем анимацию галереи
+    updateGalleryAnimation();
     
     renderer.render(scene, camera);
 }
