@@ -38,52 +38,52 @@ function adjustColorBrightness(color, amount) {
     return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 }
 
-// Данные проектов
+// Данные проектов (увеличено разрешение для четкости)
 const projects = [
     {
         name: "Проект 1",
         images: [
-            createPlaceholderImage(800, 600, '#667eea', 'Проект 1 - Изображение 1'),
-            createPlaceholderImage(800, 600, '#764ba2', 'Проект 1 - Изображение 2'),
-            createPlaceholderImage(800, 600, '#f093fb', 'Проект 1 - Изображение 3')
+            createPlaceholderImage(2048, 1536, '#667eea', 'Проект 1 - Изображение 1'),
+            createPlaceholderImage(2048, 1536, '#764ba2', 'Проект 1 - Изображение 2'),
+            createPlaceholderImage(2048, 1536, '#f093fb', 'Проект 1 - Изображение 3')
         ],
-        thumbnail: createPlaceholderImage(480, 272, '#667eea', 'Проект 1'),
+        thumbnail: createPlaceholderImage(1920, 1088, '#667eea', 'Проект 1'),
         description: "Описание проекта 1 будет добавлено позже..."
     },
     {
         name: "Проект 2",
         images: [
-            createPlaceholderImage(800, 600, '#4facfe', 'Проект 2 - Изображение 1'),
-            createPlaceholderImage(800, 600, '#00f2fe', 'Проект 2 - Изображение 2')
+            createPlaceholderImage(2048, 1536, '#4facfe', 'Проект 2 - Изображение 1'),
+            createPlaceholderImage(2048, 1536, '#00f2fe', 'Проект 2 - Изображение 2')
         ],
-        thumbnail: createPlaceholderImage(480, 272, '#4facfe', 'Проект 2'),
+        thumbnail: createPlaceholderImage(1920, 1088, '#4facfe', 'Проект 2'),
         description: "Описание проекта 2 будет добавлено позже..."
     },
     {
         name: "Проект 3",
         images: [
-            createPlaceholderImage(800, 600, '#43e97b', 'Проект 3 - Изображение 1'),
-            createPlaceholderImage(800, 600, '#38f9d7', 'Проект 3 - Изображение 2'),
-            createPlaceholderImage(800, 600, '#fa709a', 'Проект 3 - Изображение 3')
+            createPlaceholderImage(2048, 1536, '#43e97b', 'Проект 3 - Изображение 1'),
+            createPlaceholderImage(2048, 1536, '#38f9d7', 'Проект 3 - Изображение 2'),
+            createPlaceholderImage(2048, 1536, '#fa709a', 'Проект 3 - Изображение 3')
         ],
-        thumbnail: createPlaceholderImage(480, 272, '#43e97b', 'Проект 3'),
+        thumbnail: createPlaceholderImage(1920, 1088, '#43e97b', 'Проект 3'),
         description: "Описание проекта 3 будет добавлено позже..."
     },
     {
         name: "Проект 4",
         images: [
-            createPlaceholderImage(800, 600, '#fa709a', 'Проект 4 - Изображение 1')
+            createPlaceholderImage(2048, 1536, '#fa709a', 'Проект 4 - Изображение 1')
         ],
-        thumbnail: createPlaceholderImage(480, 272, '#fa709a', 'Проект 4'),
+        thumbnail: createPlaceholderImage(1920, 1088, '#fa709a', 'Проект 4'),
         description: "Описание проекта 4 будет добавлено позже..."
     },
     {
         name: "Проект 5",
         images: [
-            createPlaceholderImage(800, 600, '#fee140', 'Проект 5 - Изображение 1'),
-            createPlaceholderImage(800, 600, '#f5576c', 'Проект 5 - Изображение 2')
+            createPlaceholderImage(2048, 1536, '#fee140', 'Проект 5 - Изображение 1'),
+            createPlaceholderImage(2048, 1536, '#f5576c', 'Проект 5 - Изображение 2')
         ],
-        thumbnail: createPlaceholderImage(480, 272, '#fee140', 'Проект 5'),
+        thumbnail: createPlaceholderImage(1920, 1088, '#fee140', 'Проект 5'),
         description: "Описание проекта 5 будет добавлено позже..."
     }
 ];
@@ -107,6 +107,7 @@ function init() {
     const canvas = document.getElementById('webgl-canvas');
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Для четкости на retina дисплеях
     renderer.shadowMap.enabled = true;
 
     // Освещение
@@ -322,12 +323,18 @@ function updateScreenTexture() {
         console.log('Режим галереи, проект:', currentProject.name);
     }
     
-    // Загружаем текстуру
+    // Загружаем текстуру с улучшенными настройками
     const loader = new THREE.TextureLoader();
     loader.load(
         imageUrl,
         (texture) => {
             console.log('✓ Текстура загружена успешно');
+            // Настройки для более четкого отображения
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.anisotropy = renderer.capabilities.getMaxAnisotropy(); // Максимальная анизотропная фильтрация
+            texture.needsUpdate = true;
+            
             screen.material = new THREE.MeshBasicMaterial({ 
                 map: texture,
                 side: THREE.DoubleSide
