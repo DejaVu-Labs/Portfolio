@@ -433,9 +433,9 @@ function handleButtonClick(action) {
         // Действия в режиме просмотра проекта
         if (action === 'back') {
             closeProjectView();
-        } else if (action === 'nextImage') {
+        } else if (action === 'next') {
             nextImage();
-        } else if (action === 'prevImage') {
+        } else if (action === 'prev') {
             prevImage();
         }
     } else {
