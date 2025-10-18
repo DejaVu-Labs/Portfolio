@@ -443,20 +443,38 @@ function updateProjectViewScreen() {
 }
 
 // Обновление экранов в режиме галереи
-function updateGalleryScreens() {
-    console.log('Режим галереи, текущий проект:', currentProjectIndex);
+function updateGalleryScreens(direction) {
+    console.log('Режим галереи, текущий проект:', currentProjectIndex, 'направление:', direction);
     
     // Показываем все 3 экрана
     projectScreens.forEach((screen, index) => {
         screen.mesh.visible = true;
     });
     
-    // Определяем индексы проектов для отображения
-    const indices = [
-        (currentProjectIndex - 1 + projects.length) % projects.length, // Левый
-        currentProjectIndex,                                             // Центральный
-        (currentProjectIndex + 1) % projects.length                      // Правый
-    ];
+    // Определяем индексы проектов для отображения в зависимости от направления
+    let indices;
+    if (direction === 'next') {
+        // При next новый проект появляется справа
+        indices = [
+            (currentProjectIndex - 2 + projects.length) % projects.length, // Левый (будет уезжать)
+            (currentProjectIndex - 1 + projects.length) % projects.length, // Центральный (было правым)
+            currentProjectIndex                                             // Правый (новый проект)
+        ];
+    } else if (direction === 'prev') {
+        // При prev новый проект появляется слева
+        indices = [
+            currentProjectIndex,                                             // Левый (новый проект)
+            (currentProjectIndex + 1) % projects.length,                    // Центральный (было левым)
+            (currentProjectIndex + 2) % projects.length                     // Правый (будет уезжать)
+        ];
+    } else {
+        // По умолчанию (первая загрузка)
+        indices = [
+            (currentProjectIndex - 1 + projects.length) % projects.length, // Левый
+            currentProjectIndex,                                             // Центральный
+            (currentProjectIndex + 1) % projects.length                      // Правый
+        ];
+    }
     
     // Загружаем текстуры для каждого экрана
     indices.forEach((projectIndex, screenIndex) => {
@@ -624,22 +642,37 @@ function startGalleryAnimation(direction) {
     
     // Сохраняем текущие параметры перед началом анимации
     projectScreens.forEach((screen, index) => {
-        screen.currentX = screen.mesh.position.x;
         screen.currentScale = screen.mesh.scale.x;
         screen.currentOpacity = screen.mesh.material ? screen.mesh.material.opacity : (index === 1 ? 1.0 : 0.6);
     });
     
-    // Устанавливаем целевые позиции в зависимости от направления
+    // Устанавливаем начальные и целевые позиции в зависимости от направления
     const positions = [-screenDistance, 0, screenDistance];
     
     if (direction === 'next') {
         // При следующем все экраны смещаются влево
+        // Правый экран (index=2) заезжает с правого края
         projectScreens.forEach((screen, index) => {
+            if (index === 2) {
+                // Правый экран начинает еще правее
+                screen.currentX = positions[index] + screenDistance;
+                screen.mesh.position.x = screen.currentX;
+            } else {
+                screen.currentX = screen.mesh.position.x;
+            }
             screen.targetX = positions[index] - screenDistance;
         });
     } else if (direction === 'prev') {
         // При предыдущем все экраны смещаются вправо
+        // Левый экран (index=0) заезжает с левого края
         projectScreens.forEach((screen, index) => {
+            if (index === 0) {
+                // Левый экран начинает еще левее
+                screen.currentX = positions[index] - screenDistance;
+                screen.mesh.position.x = screen.currentX;
+            } else {
+                screen.currentX = screen.mesh.position.x;
+            }
             screen.targetX = positions[index] + screenDistance;
         });
     }
@@ -655,8 +688,8 @@ function startGalleryAnimation(direction) {
     isAnimating = true;
     animationStartTime = performance.now();
     
-    // Обновляем текстуры для новых проектов
-    updateGalleryScreens();
+    // Обновляем текстуры для новых проектов с учетом направления
+    updateGalleryScreens(direction);
     
     // Логируем параметры анимации
     projectScreens.forEach((screen, index) => {
