@@ -250,7 +250,8 @@ function createButtons() {
     const triangleMaterial = buttonMaterial.clone();
     triangleMaterial.color.setHex(0x38f9d7);
     buttons.triangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
-    buttons.triangle.position.set(3.5, -0.3, 0.65);
+    // Смещаем треугольник назад на половину depth для центрирования
+    buttons.triangle.position.set(3.5, -0.3, 0.575);
     buttons.triangle.userData = { type: 'triangle', action: 'open' };
     psp.add(buttons.triangle);
 
@@ -277,7 +278,7 @@ function createButtons() {
     
     // Верх
     const dpadUp = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, 0.4, 0.1),
+        new THREE.BoxGeometry(0.3, 0.4, 0.15),
         dpadMaterial
     );
     dpadUp.position.set(-3.5, -0.3, 0.65);
@@ -285,7 +286,7 @@ function createButtons() {
 
     // Низ
     const dpadDown = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, 0.4, 0.1),
+        new THREE.BoxGeometry(0.3, 0.4, 0.15),
         dpadMaterial
     );
     dpadDown.position.set(-3.5, -1.3, 0.65);
@@ -293,7 +294,7 @@ function createButtons() {
 
     // Лево
     const dpadLeft = new THREE.Mesh(
-        new THREE.BoxGeometry(0.4, 0.3, 0.1),
+        new THREE.BoxGeometry(0.4, 0.3, 0.15),
         dpadMaterial
     );
     dpadLeft.position.set(-4.0, -0.8, 0.65);
@@ -301,7 +302,7 @@ function createButtons() {
 
     // Право
     const dpadRight = new THREE.Mesh(
-        new THREE.BoxGeometry(0.4, 0.3, 0.1),
+        new THREE.BoxGeometry(0.4, 0.3, 0.15),
         dpadMaterial
     );
     dpadRight.position.set(-3.0, -0.8, 0.65);
