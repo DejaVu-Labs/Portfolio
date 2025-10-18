@@ -189,7 +189,31 @@ function createPSP() {
     screen.position.set(0, 0.5, 0.44);
     psp.add(screen);
 
-    console.log('Экран PSP создан, создаем экраны проектов...');
+    console.log('Экран PSP создан, загружаем фоновое изображение...');
+    
+    // Загружаем фоновое изображение
+    const backgroundLoader = new THREE.TextureLoader();
+    backgroundLoader.load(
+        'images/background.png',
+        (texture) => {
+            console.log('✓ Фоновое изображение загружено');
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            
+            screen.material = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide
+            });
+            screen.material.needsUpdate = true;
+        },
+        undefined,
+        (error) => {
+            console.error('✗ Ошибка загрузки фонового изображения:', error);
+        }
+    );
+
+    console.log('Создаем экраны проектов...');
 
     // Создание 3 экранов для проектов (левый, центральный, правый)
     createProjectScreens();
