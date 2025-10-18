@@ -7,6 +7,7 @@ let projectScreens = []; // Массив для хранения 3 экрано�
 let isAnimating = false; // Флаг анимации
 let animationStartTime = 0; // Время начала анимации
 let animationDuration = 400; // Длительность анимации в миллисекундах
+let clippingPlanes = []; // Плоскости обрезки для экрана
 
 // Функция плавности (easing) для анимации
 function easeInOutCubic(t) {
@@ -118,6 +119,7 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Для четкости на retina дисплеях
     renderer.shadowMap.enabled = true;
+    renderer.localClippingEnabled = true; // Включаем локальное обрезание
 
     // Освещение
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -218,6 +220,19 @@ function createPSP() {
     psp.scale.set(7, 7, 7);
 
     scene.add(psp);
+    
+    // Создаем плоскости обрезки после масштабирования PSP
+    // Экран имеет ширину 4.8 в локальных координатах, после масштаба 7x - это 4.8*7=33.6 в мировых
+    // Центр на X=0, границы на ±2.4*7 = ±16.8 в мировых координатах
+    // Нормаль плоскости указывает "внутрь" видимой области
+    const pspScale = 7;
+    const screenHalfWidth = 2.4 * pspScale;
+    clippingPlanes = [
+        new THREE.Plane(new THREE.Vector3(1, 0, 0), screenHalfWidth),  // Левая граница (нормаль вправо, обрезает слева)
+        new THREE.Plane(new THREE.Vector3(-1, 0, 0), screenHalfWidth)  // Правая граница (нормаль влево, обрезает справа)
+    ];
+    
+    console.log('Clipping planes созданы, границы:', -screenHalfWidth, screenHalfWidth);
 }
 
 // Создание кнопок управления
@@ -345,7 +360,9 @@ function createProjectScreens() {
             color: 0xffffff,
             side: THREE.DoubleSide,
             transparent: true,
-            opacity: i === 1 ? 1.0 : 0.6 // Центральный ярче
+            opacity: i === 1 ? 1.0 : 0.6, // Центральный ярче
+            clippingPlanes: clippingPlanes, // Применяем плоскости обрезки
+            clipShadows: true
         });
         
         const projectScreen = new THREE.Mesh(geometry, material);
@@ -412,7 +429,9 @@ function updateProjectViewScreen() {
             
             projectScreens[1].mesh.material = new THREE.MeshBasicMaterial({
                 map: texture,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                clippingPlanes: clippingPlanes, // Применяем плоскости обрезки
+                clipShadows: true
             });
             projectScreens[1].mesh.material.needsUpdate = true;
         },
@@ -461,7 +480,9 @@ function updateGalleryScreens() {
                     map: texture,
                     side: THREE.DoubleSide,
                     transparent: true,
-                    opacity: currentOpacity
+                    opacity: currentOpacity,
+                    clippingPlanes: clippingPlanes, // Применяем плоскости обрезки
+                    clipShadows: true
                 });
                 projectScreens[screenIndex].mesh.material.needsUpdate = true;
             },
