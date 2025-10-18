@@ -67,7 +67,7 @@ function init() {
         0.1,
         1000
     );
-    camera.position.set(0, 0, 15);
+    camera.position.set(0, 0, 30);
 
     // Рендерер
     const canvas = document.getElementById('webgl-canvas');
@@ -99,8 +99,8 @@ function init() {
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 10;
-    controls.maxDistance = 25;
+    controls.minDistance = 20;
+    controls.maxDistance = 60;
 
     // Обработчики событий
     window.addEventListener('resize', onWindowResize);
@@ -127,10 +127,15 @@ function createPSP() {
 
     // Экран PSP
     const screenGeometry = new THREE.BoxGeometry(4.8, 2.72, 0.1);
-    const screenMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const screenMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x333333,
+        side: THREE.DoubleSide
+    });
     screen = new THREE.Mesh(screenGeometry, screenMaterial);
     screen.position.set(0, 0.5, 0.45);
     psp.add(screen);
+
+    console.log('Экран PSP создан, загружаем текстуру...');
 
     // Текстура на экран (галерея)
     updateScreenTexture();
@@ -269,14 +274,28 @@ function updateScreenTexture() {
     if (isProjectViewMode) {
         // Показываем текущее изображение проекта
         imageUrl = currentProject.images[currentImageIndex];
+        console.log('Режим просмотра проекта, загружаем изображение:', imageUrl);
     } else {
         // Показываем превью галереи
         imageUrl = currentProject.thumbnail;
+        console.log('Режим галереи, загружаем превью:', imageUrl);
     }
     
-    loader.load(imageUrl, (texture) => {
-        screen.material = new THREE.MeshBasicMaterial({ map: texture });
-    });
+    loader.load(
+        imageUrl,
+        (texture) => {
+            console.log('Текстура загружена успешно');
+            screen.material = new THREE.MeshBasicMaterial({ 
+                map: texture,
+                side: THREE.DoubleSide
+            });
+            screen.material.needsUpdate = true;
+        },
+        undefined,
+        (error) => {
+            console.error('Ошибка загрузки текстуры:', error);
+        }
+    );
 }
 
 // Обработчик кликов
@@ -308,6 +327,7 @@ function onCanvasClick(event) {
             userData = button.parent.userData;
         }
 
+        console.log('Нажата кнопка:', userData.action);
         handleButtonClick(userData.action);
         
         // Анимация нажатия
@@ -317,6 +337,7 @@ function onCanvasClick(event) {
 
 // Обработка нажатий кнопок
 function handleButtonClick(action) {
+    console.log('handleButtonClick вызван с action:', action, 'isProjectViewMode:', isProjectViewMode);
     if (isProjectViewMode) {
         // Действия в режиме просмотра проекта
         if (action === 'back') {
@@ -351,12 +372,14 @@ function prevProject() {
 
 // Режим просмотра проекта
 function openProjectView() {
+    console.log('Открываем просмотр проекта:', currentProjectIndex);
     isProjectViewMode = true;
     currentImageIndex = 0;
     updateScreenTexture();
 }
 
 function closeProjectView() {
+    console.log('Закрываем просмотр проекта');
     isProjectViewMode = false;
     currentImageIndex = 0;
     updateScreenTexture();
