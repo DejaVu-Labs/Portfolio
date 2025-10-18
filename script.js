@@ -4,52 +4,86 @@ let currentProjectIndex = 0;
 let isProjectViewMode = false;
 let currentImageIndex = 0;
 
+// Функция создания placeholder изображения
+function createPlaceholderImage(width, height, color, text) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    
+    // Градиентный фон
+    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(1, adjustColorBrightness(color, -20));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Текст
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold ' + Math.floor(height / 12) + 'px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, width / 2, height / 2);
+    
+    return canvas.toDataURL();
+}
+
+// Вспомогательная функция для изменения яркости цвета
+function adjustColorBrightness(color, amount) {
+    const hex = color.replace('#', '');
+    const num = parseInt(hex, 16);
+    const r = Math.max(0, Math.min(255, ((num >> 16) & 0xff) + amount));
+    const g = Math.max(0, Math.min(255, ((num >> 8) & 0xff) + amount));
+    const b = Math.max(0, Math.min(255, (num & 0xff) + amount));
+    return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+
 // Данные проектов
 const projects = [
     {
         name: "Проект 1",
         images: [
-            "https://via.placeholder.com/800x600/667eea/ffffff?text=Проект+1+-+Изображение+1",
-            "https://via.placeholder.com/800x600/764ba2/ffffff?text=Проект+1+-+Изображение+2",
-            "https://via.placeholder.com/800x600/f093fb/ffffff?text=Проект+1+-+Изображение+3"
+            createPlaceholderImage(800, 600, '#667eea', 'Проект 1 - Изображение 1'),
+            createPlaceholderImage(800, 600, '#764ba2', 'Проект 1 - Изображение 2'),
+            createPlaceholderImage(800, 600, '#f093fb', 'Проект 1 - Изображение 3')
         ],
-        thumbnail: "https://via.placeholder.com/480x272/667eea/ffffff?text=Проект+1",
+        thumbnail: createPlaceholderImage(480, 272, '#667eea', 'Проект 1'),
         description: "Описание проекта 1 будет добавлено позже..."
     },
     {
         name: "Проект 2",
         images: [
-            "https://via.placeholder.com/800x600/4facfe/ffffff?text=Проект+2+-+Изображение+1",
-            "https://via.placeholder.com/800x600/00f2fe/ffffff?text=Проект+2+-+Изображение+2"
+            createPlaceholderImage(800, 600, '#4facfe', 'Проект 2 - Изображение 1'),
+            createPlaceholderImage(800, 600, '#00f2fe', 'Проект 2 - Изображение 2')
         ],
-        thumbnail: "https://via.placeholder.com/480x272/4facfe/ffffff?text=Проект+2",
+        thumbnail: createPlaceholderImage(480, 272, '#4facfe', 'Проект 2'),
         description: "Описание проекта 2 будет добавлено позже..."
     },
     {
         name: "Проект 3",
         images: [
-            "https://via.placeholder.com/800x600/43e97b/ffffff?text=Проект+3+-+Изображение+1",
-            "https://via.placeholder.com/800x600/38f9d7/ffffff?text=Проект+3+-+Изображение+2",
-            "https://via.placeholder.com/800x600/fa709a/ffffff?text=Проект+3+-+Изображение+3"
+            createPlaceholderImage(800, 600, '#43e97b', 'Проект 3 - Изображение 1'),
+            createPlaceholderImage(800, 600, '#38f9d7', 'Проект 3 - Изображение 2'),
+            createPlaceholderImage(800, 600, '#fa709a', 'Проект 3 - Изображение 3')
         ],
-        thumbnail: "https://via.placeholder.com/480x272/43e97b/ffffff?text=Проект+3",
+        thumbnail: createPlaceholderImage(480, 272, '#43e97b', 'Проект 3'),
         description: "Описание проекта 3 будет добавлено позже..."
     },
     {
         name: "Проект 4",
         images: [
-            "https://via.placeholder.com/800x600/fa709a/ffffff?text=Проект+4+-+Изображение+1"
+            createPlaceholderImage(800, 600, '#fa709a', 'Проект 4 - Изображение 1')
         ],
-        thumbnail: "https://via.placeholder.com/480x272/fa709a/ffffff?text=Проект+4",
+        thumbnail: createPlaceholderImage(480, 272, '#fa709a', 'Проект 4'),
         description: "Описание проекта 4 будет добавлено позже..."
     },
     {
         name: "Проект 5",
         images: [
-            "https://via.placeholder.com/800x600/fee140/333333?text=Проект+5+-+Изображение+1",
-            "https://via.placeholder.com/800x600/f5576c/ffffff?text=Проект+5+-+Изображение+2"
+            createPlaceholderImage(800, 600, '#fee140', 'Проект 5 - Изображение 1'),
+            createPlaceholderImage(800, 600, '#f5576c', 'Проект 5 - Изображение 2')
         ],
-        thumbnail: "https://via.placeholder.com/480x272/fee140/333333?text=Проект+5",
+        thumbnail: createPlaceholderImage(480, 272, '#fee140', 'Проект 5'),
         description: "Описание проекта 5 будет добавлено позже..."
     }
 ];
@@ -67,7 +101,7 @@ function init() {
         0.1,
         1000
     );
-    camera.position.set(0, 0, 30);
+    camera.position.set(0, 0, 40);
 
     // Рендерер
     const canvas = document.getElementById('webgl-canvas');
@@ -99,8 +133,8 @@ function init() {
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 20;
-    controls.maxDistance = 60;
+    controls.minDistance = 25;
+    controls.maxDistance = 70;
 
     // Обработчики событий
     window.addEventListener('resize', onWindowResize);
@@ -267,24 +301,25 @@ function createButtons() {
 
 // Обновление текстуры экрана
 function updateScreenTexture() {
-    const loader = new THREE.TextureLoader();
     const currentProject = projects[currentProjectIndex];
     
     let imageUrl;
     if (isProjectViewMode) {
         // Показываем текущее изображение проекта
         imageUrl = currentProject.images[currentImageIndex];
-        console.log('Режим просмотра проекта, загружаем изображение:', imageUrl);
+        console.log('Режим просмотра проекта, изображение:', currentImageIndex + 1);
     } else {
         // Показываем превью галереи
         imageUrl = currentProject.thumbnail;
-        console.log('Режим галереи, загружаем превью:', imageUrl);
+        console.log('Режим галереи, проект:', currentProject.name);
     }
     
+    // Загружаем текстуру
+    const loader = new THREE.TextureLoader();
     loader.load(
         imageUrl,
         (texture) => {
-            console.log('Текстура загружена успешно');
+            console.log('✓ Текстура загружена успешно');
             screen.material = new THREE.MeshBasicMaterial({ 
                 map: texture,
                 side: THREE.DoubleSide
@@ -293,7 +328,7 @@ function updateScreenTexture() {
         },
         undefined,
         (error) => {
-            console.error('Ошибка загрузки текстуры:', error);
+            console.error('✗ Ошибка загрузки текстуры:', error);
         }
     );
 }
