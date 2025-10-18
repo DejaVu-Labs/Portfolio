@@ -139,6 +139,7 @@ function init() {
     // Обработчики событий
     window.addEventListener('resize', onWindowResize);
     canvas.addEventListener('click', onCanvasClick);
+    canvas.addEventListener('touchstart', onTouchStart);
 
     // Анимация
     animate();
@@ -333,13 +334,43 @@ function updateScreenTexture() {
     );
 }
 
+// Универсальная функция получения координат
+function getEventCoordinates(event) {
+    let clientX, clientY;
+    
+    if (event.type.startsWith('touch')) {
+        // Для touch-событий
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+    } else {
+        // Для обычных кликов
+        clientX = event.clientX;
+        clientY = event.clientY;
+    }
+    
+    return { clientX, clientY };
+}
+
+// Обработчик touch-событий
+function onTouchStart(event) {
+    event.preventDefault(); // Предотвращаем стандартное поведение
+    handleInteraction(event);
+}
+
 // Обработчик кликов
 function onCanvasClick(event) {
+    handleInteraction(event);
+}
+
+// Универсальная функция обработки взаимодействия
+function handleInteraction(event) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    
+    const { clientX, clientY } = getEventCoordinates(event);
 
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
 
@@ -362,7 +393,7 @@ function onCanvasClick(event) {
             userData = button.parent.userData;
         }
 
-        console.log('Нажата кнопка:', userData.action);
+        console.log('Нажата кнопка:', userData.action, 'тип события:', event.type);
         handleButtonClick(userData.action);
         
         // Анимация нажатия
