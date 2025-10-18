@@ -160,6 +160,9 @@ function createPSP() {
     // Создание кнопок
     createButtons();
 
+    // Увеличение размера PSP в 3 раза
+    psp.scale.set(3, 3, 3);
+
     scene.add(psp);
 }
 
@@ -411,9 +414,6 @@ function onWindowResize() {
 // Анимационный цикл
 function animate() {
     requestAnimationFrame(animate);
-    
-    // Небольшое вращение PSP для эффекта
-    psp.rotation.y += 0.001;
     
     renderer.render(scene, camera);
 }
