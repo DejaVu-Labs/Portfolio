@@ -736,12 +736,22 @@ function startGalleryAnimation(direction) {
         });
     }
     
-    // Устанавливаем целевые масштабы и прозрачность
-    // После завершения анимации экраны вернутся в стандартные позиции,
-    // поэтому центральный (index=1) всегда большой, боковые (index=0,2) - маленькие
+    // Устанавливаем целевые масштабы и прозрачность в зависимости от направления
     projectScreens.forEach((screen, index) => {
-        screen.targetScale = (index === 1) ? 1.0 : 0.8;
-        screen.targetOpacity = (index === 1) ? 1.0 : 0.6;
+        let willBeCenter = false;
+        
+        if (direction === 'next') {
+            // При next: правый экран (index=2) становится центральным
+            // Центральный (index=1) становится левым (маленьким)
+            willBeCenter = (index === 2);
+        } else if (direction === 'prev') {
+            // При prev: левый экран (index=0) становится центральным
+            // Центральный (index=1) становится правым (маленьким)
+            willBeCenter = (index === 0);
+        }
+        
+        screen.targetScale = willBeCenter ? 1.0 : 0.8;
+        screen.targetOpacity = willBeCenter ? 1.0 : 0.6;
     });
     
     // Загружаем текстуру ТОЛЬКО на входящий экран до начала анимации
@@ -835,12 +845,18 @@ function updateGalleryAnimation() {
             screen.currentX = positions[index];
             screen.targetX = positions[index];
             
-            screen.mesh.scale.set(screen.targetScale, screen.targetScale, 1);
-            screen.currentScale = screen.targetScale;
+            // Устанавливаем правильные масштабы: центральный большой, боковые маленькие
+            const finalScale = (index === 1) ? 1.0 : 0.8;
+            const finalOpacity = (index === 1) ? 1.0 : 0.6;
+            
+            screen.mesh.scale.set(finalScale, finalScale, 1);
+            screen.currentScale = finalScale;
+            screen.targetScale = finalScale;
             
             if (screen.mesh.material) {
-                screen.mesh.material.opacity = screen.targetOpacity;
-                screen.currentOpacity = screen.targetOpacity;
+                screen.mesh.material.opacity = finalOpacity;
+                screen.currentOpacity = finalOpacity;
+                screen.targetOpacity = finalOpacity;
             }
         });
         
