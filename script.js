@@ -707,7 +707,7 @@ function prevProject() {
 function startGalleryAnimation(direction) {
     if (isProjectViewMode) {
         // В режиме просмотра проекта анимация не нужна
-        updateScreenTexture();
+    updateScreenTexture();
         return;
     }
     
@@ -769,6 +769,7 @@ function startGalleryAnimation(direction) {
     }
     
     // Устанавливаем целевые масштабы в зависимости от целевых позиций
+    console.log('Установка целевых масштабов:');
     projectScreens.forEach((screen, index) => {
         // Кто будет в центре (targetX близок к 0)?
         const willBeInCenter = Math.abs(screen.targetX) < 0.1;
@@ -776,7 +777,7 @@ function startGalleryAnimation(direction) {
         screen.targetScale = willBeInCenter ? 1.0 : 0.8;
         screen.targetOpacity = willBeInCenter ? 1.0 : 0.6;
         
-        console.log(`  Экран[${index}]: targetX=${screen.targetX.toFixed(2)}, willBeCenter=${willBeInCenter}, targetScale=${screen.targetScale}`);
+        console.log(`  Экран[${index}]: currentScale=${screen.currentScale.toFixed(2)} → targetScale=${screen.targetScale}, targetX=${screen.targetX.toFixed(2)}, willBeCenter=${willBeInCenter}`);
     });
     
     console.log('🔄 Загружаем текстуру на буферный экран...');
@@ -866,46 +867,29 @@ function updateGalleryAnimation() {
         isAnimating = false;
         
         console.log('⚡ ФИНАЛИЗАЦИЯ АНИМАЦИИ');
-        console.log('Состояние экранов ПОСЛЕ анимации (перед изменениями):');
+        console.log('Финальное состояние экранов:');
         projectScreens.forEach((screen, index) => {
-            console.log(`  Экран[${index}]: pos=${screen.mesh.position.x.toFixed(2)}, scale=${screen.mesh.scale.x.toFixed(2)}, opacity=${screen.mesh.material?.opacity.toFixed(2)}`);
+            console.log(`  Экран[${index}]: pos=${screen.mesh.position.x.toFixed(2)}, scale=${screen.mesh.scale.x.toFixed(2)}, opacity=${screen.mesh.material?.opacity.toFixed(2)}, visible=${screen.mesh.visible}`);
         });
         
-        // Возвращаем только основные 3 экрана в стандартные позиции
-        const standardPositions = [-1.6, 0, 1.6];
-        for (let i = 0; i < 3; i++) {
-            projectScreens[i].mesh.position.x = standardPositions[i];
-            projectScreens[i].currentX = standardPositions[i];
-            projectScreens[i].targetX = standardPositions[i];
-            
-            // Устанавливаем правильные масштабы
-            const finalScale = (i === 1) ? 1.0 : 0.8;
-            const finalOpacity = (i === 1) ? 1.0 : 0.6;
-            
-            projectScreens[i].mesh.scale.set(finalScale, finalScale, 1);
-            projectScreens[i].currentScale = finalScale;
-            projectScreens[i].targetScale = finalScale;
-            projectScreens[i].mesh.visible = true; // Показываем
-            
-            if (projectScreens[i].mesh.material) {
-                projectScreens[i].mesh.material.opacity = finalOpacity;
-                projectScreens[i].currentOpacity = finalOpacity;
-                projectScreens[i].targetOpacity = finalOpacity;
+        // НЕ возвращаем позиции! Просто фиксируем текущее состояние
+        projectScreens.forEach((screen, index) => {
+            screen.currentX = screen.mesh.position.x;
+            screen.targetX = screen.currentX;
+            screen.currentScale = screen.mesh.scale.x;
+            screen.currentOpacity = screen.mesh.material ? screen.mesh.material.opacity : 0.6;
+        });
+        
+        // Скрываем буферный экран - он больше не нужен
+        projectScreens[3].mesh.visible = false;
+        
+        console.log('✅ Анимация завершена (позиции и текстуры НЕ меняем!)');
+        console.log('Видимые экраны после анимации:');
+        for (let i = 0; i < 4; i++) {
+            if (projectScreens[i].mesh.visible) {
+                console.log(`  Экран[${i}]: pos=${projectScreens[i].mesh.position.x.toFixed(2)}, scale=${projectScreens[i].mesh.scale.x.toFixed(2)}`);
             }
         }
-        
-        // Скрываем буферный экран
-        projectScreens[3].mesh.visible = false;
-        projectScreens[3].mesh.position.x = 3.2;
-        projectScreens[3].currentX = 3.2;
-        projectScreens[3].targetX = 3.2;
-        
-        console.log('Состояние ПОСЛЕ возврата позиций:');
-        projectScreens.forEach((screen, index) => {
-            console.log(`  Экран[${index}]: pos=${screen.mesh.position.x.toFixed(2)}, scale=${screen.mesh.scale.x.toFixed(2)}, visible=${screen.mesh.visible}`);
-        });
-        
-        console.log('✅ Анимация завершена (текстуры НЕ перезагружаем - они уже правильные!)');
         
         return;
     }
