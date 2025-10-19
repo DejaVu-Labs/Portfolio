@@ -91,12 +91,12 @@ body {
 
 .button-icon {
     display: inline-block;
-    width: 30px;
-    height: 30px;
-    line-height: 30px;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
     text-align: center;
     margin-right: 15px;
-    font-size: 20px;
+    font-size: 24px;
     font-weight: bold;
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -109,7 +109,7 @@ body {
 
 .button-icon.square {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    border-radius: 8px;
+    border-radius: 12px;
 }
 
 .button-icon.triangle {
@@ -123,6 +123,11 @@ body {
 .button-icon.dpad {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     font-size: 18px;
+    white-space: nowrap;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    padding: 0;
 }
 
 /* Полноэкранное модальное окно */
