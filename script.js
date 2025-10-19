@@ -9,9 +9,124 @@ let animationStartTime = 0; // Время начала анимации
 let animationDuration = 400; // Длительность анимации в миллисекундах
 let clippingPlanes = []; // Плоскости обрезки для экрана
 
+// Система рендер-таргета
+let renderTarget; // WebGLRenderTarget для рендеринга проектов
+let renderCamera; // Отдельная камера для рендер-таргета
+let renderScene; // Отдельная сцена для рендер-таргета
+let backgroundTexture; // Текстура фона
+let projectMeshes = []; // Меши проектов для рендер-таргета
+
 // Функция плавности (easing) для анимации
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+// Инициализация системы рендер-таргета
+function initRenderTarget() {
+    // Размер рендер-таргета (высокое разрешение для четкости)
+    const renderWidth = 1920;
+    const renderHeight = 1080;
+    
+    // Создаем рендер-таргет
+    renderTarget = new THREE.WebGLRenderTarget(renderWidth, renderHeight, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        format: THREE.RGBAFormat,
+        type: THREE.UnsignedByteType
+    });
+    
+    // Создаем отдельную сцену для рендеринга
+    renderScene = new THREE.Scene();
+    
+    // Создаем ортогональную камеру для рендер-таргета
+    const aspect = renderWidth / renderHeight;
+    const frustumSize = 4; // Размер области рендеринга
+    renderCamera = new THREE.OrthographicCamera(
+        -frustumSize * aspect / 2, frustumSize * aspect / 2,
+        frustumSize / 2, -frustumSize / 2,
+        0.1, 1000
+    );
+    renderCamera.position.z = 5;
+    
+    // Загружаем фоновое изображение
+    const loader = new THREE.TextureLoader();
+    loader.load(
+        'images/background.png',
+        (texture) => {
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            backgroundTexture = texture;
+            
+            // Создаем фоновую плоскость
+            const backgroundGeometry = new THREE.PlaneGeometry(8, 4.5);
+            const backgroundMaterial = new THREE.MeshBasicMaterial({
+                map: backgroundTexture,
+                side: THREE.DoubleSide
+            });
+            const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+            backgroundMesh.position.z = -1; // Позади проектов
+            renderScene.add(backgroundMesh);
+        },
+        undefined,
+        (error) => {
+            console.error('✗ Ошибка загрузки фонового изображения для рендер-таргета:', error);
+        }
+    );
+    
+    // Создаем меши проектов для рендер-таргета
+    createProjectMeshes();
+    
+    // Начальная загрузка текстур
+    updateProjectScreens();
+}
+
+// Создание мешей проектов для рендер-таргета
+function createProjectMeshes() {
+    // Создаем 4 меша (3 видимых + 1 буферный)
+    for (let i = 0; i < 4; i++) {
+        const geometry = new THREE.PlaneGeometry(1.6, 1.2);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: i === 1 ? 1.0 : (i === 3 ? 0.0 : 0.6)
+        });
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        
+        // Устанавливаем начальные позиции
+        const positions = [-1.6, 0, 1.6, 3.2]; // Левый, центр, правый, буферный
+        mesh.position.set(positions[i], 0, 0);
+        mesh.visible = i < 3; // Буферный скрыт
+        
+        renderScene.add(mesh);
+        projectMeshes.push({
+            mesh: mesh,
+            currentX: positions[i],
+            targetX: positions[i],
+            currentScale: i === 1 ? 1.0 : 0.8,
+            targetScale: i === 1 ? 1.0 : 0.8,
+            currentOpacity: i === 1 ? 1.0 : 0.6,
+            targetOpacity: i === 1 ? 1.0 : 0.6
+        });
+    }
+}
+
+// Рендеринг проектов в текстуру
+function renderToTexture() {
+    if (!renderTarget || !renderScene || !renderCamera) return;
+    
+    // Рендерим сцену в текстуру
+    renderer.setRenderTarget(renderTarget);
+    renderer.render(renderScene, renderCamera);
+    renderer.setRenderTarget(null);
+    
+    // Обновляем материал экрана PSP
+    if (screen && screen.material) {
+        screen.material.map = renderTarget.texture;
+        screen.material.needsUpdate = true;
+    }
 }
 
 // Функция создания placeholder изображения
@@ -160,6 +275,9 @@ function init() {
         controlsHint.classList.add('hidden');
     });
 
+    // Инициализация рендер-таргета
+    initRenderTarget();
+    
     // Анимация
     animate();
 }
@@ -179,41 +297,22 @@ function createPSP() {
     body.castShadow = true;
     psp.add(body);
 
-    // Экран PSP (фон) - теперь плоский и позади экранов проектов
+    // Экран PSP - теперь использует рендер-таргет
     const screenGeometry = new THREE.PlaneGeometry(4.8, 2.72);
     const screenMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0x1a1a1a,
-        side: THREE.DoubleSide
+        color: 0xffffff,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 1.0,
+        clippingPlanes: clippingPlanes,
+        clipShadows: true
     });
     screen = new THREE.Mesh(screenGeometry, screenMaterial);
     screen.position.set(0, 0.5, 0.44);
     psp.add(screen);
 
-    
-    // Загружаем фоновое изображение
-    const backgroundLoader = new THREE.TextureLoader();
-    backgroundLoader.load(
-        'images/background.png',
-        (texture) => {
-            texture.minFilter = THREE.LinearFilter;
-            texture.magFilter = THREE.LinearFilter;
-            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-            
-            screen.material = new THREE.MeshBasicMaterial({
-                map: texture,
-                side: THREE.DoubleSide
-            });
-            screen.material.needsUpdate = true;
-        },
-        undefined,
-        (error) => {
-            console.error('✗ Ошибка загрузки фонового изображения:', error);
-        }
-    );
 
 
-    // Создание 3 экранов для проектов (левый, центральный, правый)
-    createProjectScreens();
 
     // Рамка экрана
     const frameMaterial = new THREE.MeshStandardMaterial({
@@ -357,65 +456,6 @@ function createButtons() {
     psp.add(buttons.dpadRight);
 }
 
-// Создание экранов для отображения проектов
-function createProjectScreens() {
-    // Все экраны имеют одинаковый базовый размер (размер центрального)
-    // Масштабирование применяется через scale для боковых экранов
-    const baseWidth = 1.6;
-    const baseHeight = 1.2;
-    
-    // Позиции экранов (все с одинаковой базовой геометрией)
-    const positions = [
-        { x: -1.6, y: 0.5, width: baseWidth, height: baseHeight }, // Левый (0)
-        { x: 0, y: 0.5, width: baseWidth, height: baseHeight },    // Центральный (1)
-        { x: 1.6, y: 0.5, width: baseWidth, height: baseHeight },  // Правый (2)
-        { x: 3.2, y: 0.5, width: baseWidth, height: baseHeight }   // Буферный (3)
-    ];
-    
-    // Создаем 4 экрана (3 видимых + 1 буферный)
-    for (let i = 0; i < 4; i++) {
-        const pos = positions[i];
-        const geometry = new THREE.PlaneGeometry(pos.width, pos.height);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            side: THREE.DoubleSide,
-            transparent: true,
-            opacity: i === 1 ? 1.0 : (i === 3 ? 0.0 : 0.6), // Центральный ярче, буферный невидим
-            clippingPlanes: clippingPlanes, // Применяем плоскости обрезки
-            clipShadows: true
-        });
-        
-        const projectScreen = new THREE.Mesh(geometry, material);
-        projectScreen.position.set(pos.x, pos.y, 0.46);
-        
-        // Устанавливаем начальный масштаб (боковые меньше, буферный тоже маленький)
-        const initialScale = i === 1 ? 1.0 : 0.8;
-        projectScreen.scale.set(initialScale, initialScale, 1);
-        
-        // Буферный экран изначально скрыт
-        if (i === 3) {
-            projectScreen.visible = false;
-        }
-        
-        psp.add(projectScreen);
-        
-        projectScreens.push({
-            mesh: projectScreen,
-            baseWidth: pos.width,
-            baseHeight: pos.height,
-            baseX: pos.x,
-            currentX: pos.x,
-            targetX: pos.x,
-            currentScale: i === 1 ? 1.0 : 0.8,
-            targetScale: i === 1 ? 1.0 : 0.8,
-            currentOpacity: i === 1 ? 1.0 : 0.6,
-            targetOpacity: i === 1 ? 1.0 : 0.6
-        });
-    }
-    
-    // Начальная загрузка текстур
-    updateProjectScreens();
-}
 
 // Обновление текстур экранов проектов
 function updateProjectScreens() {
@@ -435,13 +475,13 @@ function updateProjectViewScreen() {
     
     
     // Скрываем боковые и буферный экраны
-    projectScreens[0].mesh.visible = false;
-    projectScreens[2].mesh.visible = false;
-    projectScreens[3].mesh.visible = false;
+    projectMeshes[0].mesh.visible = false;
+    projectMeshes[2].mesh.visible = false;
+    projectMeshes[3].mesh.visible = false;
     
     // Показываем только центральный экран
-    projectScreens[1].mesh.visible = true;
-    projectScreens[1].mesh.scale.set(1.5, 1.5, 1);
+    projectMeshes[1].mesh.visible = true;
+    projectMeshes[1].mesh.scale.set(1.5, 1.5, 1);
     
     const loader = new THREE.TextureLoader();
     loader.load(
@@ -452,13 +492,11 @@ function updateProjectViewScreen() {
             texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
             texture.needsUpdate = true;
             
-            projectScreens[1].mesh.material = new THREE.MeshBasicMaterial({
+            projectMeshes[1].mesh.material = new THREE.MeshBasicMaterial({
                 map: texture,
-                side: THREE.DoubleSide,
-                clippingPlanes: clippingPlanes, // Применяем плоскости обрезки
-                clipShadows: true
+                side: THREE.DoubleSide
             });
-            projectScreens[1].mesh.material.needsUpdate = true;
+            projectMeshes[1].mesh.material.needsUpdate = true;
         },
         undefined,
         (error) => {
@@ -467,7 +505,7 @@ function updateProjectViewScreen() {
     );
 }
 
-// Загрузка текстуры проекта на конкретный экран
+// Загрузка текстуры проекта на конкретный экран в рендер-сцене
 function loadProjectTexture(screenIndex, projectIndex) {
     const project = projects[projectIndex];
     const loader = new THREE.TextureLoader();
@@ -481,19 +519,17 @@ function loadProjectTexture(screenIndex, projectIndex) {
             texture.needsUpdate = true;
             
             // Сохраняем текущую прозрачность
-            const currentOpacity = projectScreens[screenIndex].mesh.material ? 
-                projectScreens[screenIndex].mesh.material.opacity : 
-                projectScreens[screenIndex].targetOpacity;
+            const currentOpacity = projectMeshes[screenIndex].mesh.material ? 
+                projectMeshes[screenIndex].mesh.material.opacity : 
+                projectMeshes[screenIndex].targetOpacity;
             
-            projectScreens[screenIndex].mesh.material = new THREE.MeshBasicMaterial({
+            projectMeshes[screenIndex].mesh.material = new THREE.MeshBasicMaterial({
                 map: texture,
                 side: THREE.DoubleSide,
                 transparent: true,
-                opacity: currentOpacity,
-                clippingPlanes: clippingPlanes,
-                clipShadows: true
+                opacity: currentOpacity
             });
-            projectScreens[screenIndex].mesh.material.needsUpdate = true;
+            projectMeshes[screenIndex].mesh.material.needsUpdate = true;
         },
         undefined,
         (error) => {
@@ -507,9 +543,9 @@ function updateGalleryScreens(direction) {
     
     // Показываем только первые 3 экрана (не буферный)
     for (let i = 0; i < 3; i++) {
-        projectScreens[i].mesh.visible = true;
+        projectMeshes[i].mesh.visible = true;
     }
-    projectScreens[3].mesh.visible = false; // Буферный скрыт по умолчанию
+    projectMeshes[3].mesh.visible = false; // Буферный скрыт по умолчанию
     
     // Определяем индексы проектов для отображения в зависимости от направления
     let indices;
@@ -550,19 +586,17 @@ function updateGalleryScreens(direction) {
                 texture.needsUpdate = true;
                 
                 // Сохраняем текущую прозрачность если материал уже существует
-                const currentOpacity = projectScreens[screenIndex].mesh.material ? 
-                    projectScreens[screenIndex].mesh.material.opacity : 
-                    projectScreens[screenIndex].targetOpacity;
+                const currentOpacity = projectMeshes[screenIndex].mesh.material ? 
+                    projectMeshes[screenIndex].mesh.material.opacity : 
+                    projectMeshes[screenIndex].targetOpacity;
                 
-                projectScreens[screenIndex].mesh.material = new THREE.MeshBasicMaterial({
+                projectMeshes[screenIndex].mesh.material = new THREE.MeshBasicMaterial({
                     map: texture,
                     side: THREE.DoubleSide,
                     transparent: true,
-                    opacity: currentOpacity,
-                    clippingPlanes: clippingPlanes, // Применяем плоскости обрезки
-                    clipShadows: true
+                    opacity: currentOpacity
                 });
-                projectScreens[screenIndex].mesh.material.needsUpdate = true;
+                projectMeshes[screenIndex].mesh.material.needsUpdate = true;
             },
             undefined,
             (error) => {
@@ -697,15 +731,15 @@ function startGalleryAnimation(direction) {
     const screenDistance = 1.6;
     
     // Сохраняем текущие параметры перед началом анимации
-    projectScreens.forEach((screen, index) => {
-        screen.currentScale = screen.mesh.scale.x;
-        screen.currentOpacity = screen.mesh.material ? screen.mesh.material.opacity : (index === 1 ? 1.0 : 0.6);
+    projectMeshes.forEach((projectMesh, index) => {
+        projectMesh.currentScale = projectMesh.mesh.scale.x;
+        projectMesh.currentOpacity = projectMesh.mesh.material ? projectMesh.mesh.material.opacity : (index === 1 ? 1.0 : 0.6);
     });
     
     // Сначала находим который экран находится за границей (скрытый)
     let hiddenScreenIndex = -1;
     for (let i = 0; i < 4; i++) {
-        if (!projectScreens[i].mesh.visible || Math.abs(projectScreens[i].mesh.position.x) > 2.5) {
+        if (!projectMeshes[i].mesh.visible || Math.abs(projectMeshes[i].mesh.position.x) > 2.5) {
             hiddenScreenIndex = i;
             break;
         }
@@ -721,55 +755,55 @@ function startGalleryAnimation(direction) {
     
     if (direction === 'next') {
         // Перемещаем скрытый экран за правый край для въезда
-        projectScreens[hiddenScreenIndex].mesh.visible = true;
-        projectScreens[hiddenScreenIndex].mesh.position.x = positions[2] + screenDistance;
-        projectScreens[hiddenScreenIndex].currentX = positions[2] + screenDistance;
-        projectScreens[hiddenScreenIndex].targetX = positions[2];
-        projectScreens[hiddenScreenIndex].currentScale = 0.8;
-        projectScreens[hiddenScreenIndex].currentOpacity = 0.6;
-        projectScreens[hiddenScreenIndex].mesh.scale.set(0.8, 0.8, 1);
-        if (projectScreens[hiddenScreenIndex].mesh.material) {
-            projectScreens[hiddenScreenIndex].mesh.material.opacity = 0.6;
+        projectMeshes[hiddenScreenIndex].mesh.visible = true;
+        projectMeshes[hiddenScreenIndex].mesh.position.x = positions[2] + screenDistance;
+        projectMeshes[hiddenScreenIndex].currentX = positions[2] + screenDistance;
+        projectMeshes[hiddenScreenIndex].targetX = positions[2];
+        projectMeshes[hiddenScreenIndex].currentScale = 0.8;
+        projectMeshes[hiddenScreenIndex].currentOpacity = 0.6;
+        projectMeshes[hiddenScreenIndex].mesh.scale.set(0.8, 0.8, 1);
+        if (projectMeshes[hiddenScreenIndex].mesh.material) {
+            projectMeshes[hiddenScreenIndex].mesh.material.opacity = 0.6;
         }
         
         // Остальные видимые экраны смещаются влево
         for (let i = 0; i < 4; i++) {
-            if (i !== hiddenScreenIndex && projectScreens[i].mesh.visible) {
-                projectScreens[i].currentX = projectScreens[i].mesh.position.x;
-                projectScreens[i].targetX = projectScreens[i].mesh.position.x - screenDistance;
+            if (i !== hiddenScreenIndex && projectMeshes[i].mesh.visible) {
+                projectMeshes[i].currentX = projectMeshes[i].mesh.position.x;
+                projectMeshes[i].targetX = projectMeshes[i].mesh.position.x - screenDistance;
             }
         }
         
     } else if (direction === 'prev') {
         // Перемещаем скрытый экран за левый край для въезда
-        projectScreens[hiddenScreenIndex].mesh.visible = true;
-        projectScreens[hiddenScreenIndex].mesh.position.x = positions[0] - screenDistance;
-        projectScreens[hiddenScreenIndex].currentX = positions[0] - screenDistance;
-        projectScreens[hiddenScreenIndex].targetX = positions[0];
-        projectScreens[hiddenScreenIndex].currentScale = 0.8;
-        projectScreens[hiddenScreenIndex].currentOpacity = 0.6;
-        projectScreens[hiddenScreenIndex].mesh.scale.set(0.8, 0.8, 1);
-        if (projectScreens[hiddenScreenIndex].mesh.material) {
-            projectScreens[hiddenScreenIndex].mesh.material.opacity = 0.6;
+        projectMeshes[hiddenScreenIndex].mesh.visible = true;
+        projectMeshes[hiddenScreenIndex].mesh.position.x = positions[0] - screenDistance;
+        projectMeshes[hiddenScreenIndex].currentX = positions[0] - screenDistance;
+        projectMeshes[hiddenScreenIndex].targetX = positions[0];
+        projectMeshes[hiddenScreenIndex].currentScale = 0.8;
+        projectMeshes[hiddenScreenIndex].currentOpacity = 0.6;
+        projectMeshes[hiddenScreenIndex].mesh.scale.set(0.8, 0.8, 1);
+        if (projectMeshes[hiddenScreenIndex].mesh.material) {
+            projectMeshes[hiddenScreenIndex].mesh.material.opacity = 0.6;
         }
         
         // Остальные видимые экраны смещаются вправо
         for (let i = 0; i < 4; i++) {
-            if (i !== hiddenScreenIndex && projectScreens[i].mesh.visible) {
-                projectScreens[i].currentX = projectScreens[i].mesh.position.x;
-                projectScreens[i].targetX = projectScreens[i].mesh.position.x + screenDistance;
+            if (i !== hiddenScreenIndex && projectMeshes[i].mesh.visible) {
+                projectMeshes[i].currentX = projectMeshes[i].mesh.position.x;
+                projectMeshes[i].targetX = projectMeshes[i].mesh.position.x + screenDistance;
             }
         }
         
     }
     
     // Устанавливаем целевые масштабы в зависимости от целевых позиций
-    projectScreens.forEach((screen, index) => {
+    projectMeshes.forEach((projectMesh, index) => {
         // Кто будет в центре (targetX близок к 0)?
-        const willBeInCenter = Math.abs(screen.targetX) < 0.1;
+        const willBeInCenter = Math.abs(projectMesh.targetX) < 0.1;
         
-        screen.targetScale = willBeInCenter ? 1.0 : 0.8;
-        screen.targetOpacity = willBeInCenter ? 1.0 : 0.6;
+        projectMesh.targetScale = willBeInCenter ? 1.0 : 0.8;
+        projectMesh.targetOpacity = willBeInCenter ? 1.0 : 0.6;
     });
     
     // Загружаем текстуру на найденный скрытый экран
@@ -847,16 +881,16 @@ function updateGalleryAnimation() {
         isAnimating = false;
         
         // НЕ возвращаем позиции! Просто фиксируем текущее состояние
-        projectScreens.forEach((screen, index) => {
-            screen.currentX = screen.mesh.position.x;
-            screen.targetX = screen.currentX;
-            screen.currentScale = screen.mesh.scale.x;
-            screen.currentOpacity = screen.mesh.material ? screen.mesh.material.opacity : 0.6;
+        projectMeshes.forEach((projectMesh, index) => {
+            projectMesh.currentX = projectMesh.mesh.position.x;
+            projectMesh.targetX = projectMesh.currentX;
+            projectMesh.currentScale = projectMesh.mesh.scale.x;
+            projectMesh.currentOpacity = projectMesh.mesh.material ? projectMesh.mesh.material.opacity : 0.6;
             
             // Скрываем экраны которые уехали за пределы видимой области
-            const isOutOfBounds = Math.abs(screen.mesh.position.x) > 2.5;
+            const isOutOfBounds = Math.abs(projectMesh.mesh.position.x) > 2.5;
             if (isOutOfBounds) {
-                screen.mesh.visible = false;
+                projectMesh.mesh.visible = false;
             }
         });
         
@@ -865,20 +899,20 @@ function updateGalleryAnimation() {
     
     const eased = easeInOutCubic(progress);
     
-    // Обновляем позиции, масштаб и прозрачность для каждого экрана
-    projectScreens.forEach((screen, index) => {
+    // Обновляем позиции, масштаб и прозрачность для каждого экрана в рендер-сцене
+    projectMeshes.forEach((projectMesh, index) => {
         // Интерполируем позицию X
-        const newX = screen.currentX + (screen.targetX - screen.currentX) * eased;
-        screen.mesh.position.x = newX;
+        const newX = projectMesh.currentX + (projectMesh.targetX - projectMesh.currentX) * eased;
+        projectMesh.mesh.position.x = newX;
         
         // Интерполируем масштаб
-        const newScale = screen.currentScale + (screen.targetScale - screen.currentScale) * eased;
-        screen.mesh.scale.set(newScale, newScale, 1);
+        const newScale = projectMesh.currentScale + (projectMesh.targetScale - projectMesh.currentScale) * eased;
+        projectMesh.mesh.scale.set(newScale, newScale, 1);
         
         // Интерполируем прозрачность
-        const newOpacity = screen.currentOpacity + (screen.targetOpacity - screen.currentOpacity) * eased;
-        if (screen.mesh.material) {
-            screen.mesh.material.opacity = newOpacity;
+        const newOpacity = projectMesh.currentOpacity + (projectMesh.targetOpacity - projectMesh.currentOpacity) * eased;
+        if (projectMesh.mesh.material) {
+            projectMesh.mesh.material.opacity = newOpacity;
         }
     });
 }
@@ -890,6 +924,10 @@ function animate() {
     // Обновляем анимацию галереи
     updateGalleryAnimation();
     
+    // Рендерим проекты в текстуру
+    renderToTexture();
+    
+    // Рендерим основную сцену
     renderer.render(scene, camera);
 }
 
