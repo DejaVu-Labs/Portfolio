@@ -736,6 +736,14 @@ function startGalleryAnimation(direction) {
         projectScreens[3].mesh.position.x = positions[2] + screenDistance; // За правым краем
         projectScreens[3].currentX = positions[2] + screenDistance;
         projectScreens[3].targetX = positions[2]; // Въедет на место правого
+        projectScreens[3].currentScale = 0.8; // Начальный размер
+        projectScreens[3].currentOpacity = 0.6; // Начальная прозрачность
+        
+        // Устанавливаем начальный масштаб для буферного экрана
+        projectScreens[3].mesh.scale.set(0.8, 0.8, 1);
+        if (projectScreens[3].mesh.material) {
+            projectScreens[3].mesh.material.opacity = 0.6;
+        }
         
         // Основные экраны остаются на местах и смещаются влево
         projectScreens[0].currentX = positions[0];
@@ -754,6 +762,14 @@ function startGalleryAnimation(direction) {
         projectScreens[3].mesh.position.x = positions[0] - screenDistance; // За левым краем
         projectScreens[3].currentX = positions[0] - screenDistance;
         projectScreens[3].targetX = positions[0]; // Въедет на место левого
+        projectScreens[3].currentScale = 0.8; // Начальный размер
+        projectScreens[3].currentOpacity = 0.6; // Начальная прозрачность
+        
+        // Устанавливаем начальный масштаб для буферного экрана
+        projectScreens[3].mesh.scale.set(0.8, 0.8, 1);
+        if (projectScreens[3].mesh.material) {
+            projectScreens[3].mesh.material.opacity = 0.6;
+        }
         
         // Основные экраны остаются на местах и смещаются вправо
         projectScreens[0].currentX = positions[0];
