@@ -905,14 +905,7 @@ function updateGalleryAnimation() {
             console.log(`  Экран[${index}]: pos=${screen.mesh.position.x.toFixed(2)}, scale=${screen.mesh.scale.x.toFixed(2)}, visible=${screen.mesh.visible}`);
         });
         
-        console.log('🔄 Загружаем текстуры на основные экраны...');
-        
-        // Загружаем правильные текстуры на основные 3 экрана
-        loadProjectTexture(0, (currentProjectIndex - 1 + projects.length) % projects.length); // Левый
-        loadProjectTexture(1, currentProjectIndex); // Центральный
-        loadProjectTexture(2, (currentProjectIndex + 1) % projects.length); // Правый
-        
-        console.log('✅ Анимация завершена');
+        console.log('✅ Анимация завершена (текстуры НЕ перезагружаем - они уже правильные!)');
         
         return;
     }
