@@ -363,18 +363,17 @@ function createButtons() {
 
 // Создание экранов для отображения проектов
 function createProjectScreens() {
-    // Размеры экранов (уменьшены для лучшего размещения)
-    const centerWidth = 1.6;
-    const centerHeight = 1.2;
-    const sideWidth = 1.1;
-    const sideHeight = 0.825;
+    // Все экраны имеют одинаковый базовый размер (размер центрального)
+    // Масштабирование применяется через scale для боковых экранов
+    const baseWidth = 1.6;
+    const baseHeight = 1.2;
     
-    // Позиции экранов
+    // Позиции экранов (все с одинаковой базовой геометрией)
     const positions = [
-        { x: -1.6, y: 0.5, width: sideWidth, height: sideHeight }, // Левый (0)
-        { x: 0, y: 0.5, width: centerWidth, height: centerHeight }, // Центральный (1)
-        { x: 1.6, y: 0.5, width: sideWidth, height: sideHeight },  // Правый (2)
-        { x: 3.2, y: 0.5, width: sideWidth, height: sideHeight }   // Буферный (3) - за правым краем
+        { x: -1.6, y: 0.5, width: baseWidth, height: baseHeight }, // Левый (0)
+        { x: 0, y: 0.5, width: baseWidth, height: baseHeight },    // Центральный (1)
+        { x: 1.6, y: 0.5, width: baseWidth, height: baseHeight },  // Правый (2)
+        { x: 3.2, y: 0.5, width: baseWidth, height: baseHeight }   // Буферный (3)
     ];
     
     // Создаем 4 экрана (3 видимых + 1 буферный)
