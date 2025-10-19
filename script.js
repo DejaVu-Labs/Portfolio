@@ -726,61 +726,69 @@ function startGalleryAnimation(direction) {
         screen.currentOpacity = screen.mesh.material ? screen.mesh.material.opacity : (index === 1 ? 1.0 : 0.6);
     });
     
+    // Сначала находим который экран находится за границей (скрытый)
+    let hiddenScreenIndex = -1;
+    for (let i = 0; i < 4; i++) {
+        if (!projectScreens[i].mesh.visible || Math.abs(projectScreens[i].mesh.position.x) > 2.5) {
+            hiddenScreenIndex = i;
+            console.log(`Найден скрытый экран: [${i}] на позиции ${projectScreens[i].mesh.position.x.toFixed(2)}`);
+            break;
+        }
+    }
+    
+    // Если не нашли скрытый, используем экран[3] (буферный)
+    if (hiddenScreenIndex === -1) {
+        hiddenScreenIndex = 3;
+        console.log('Скрытый экран не найден, используем буферный [3]');
+    }
+    
     // Устанавливаем начальные и целевые позиции в зависимости от направления
     const positions = [-screenDistance, 0, screenDistance];
     
     if (direction === 'next') {
-        // При next используем буферный экран[3] для нового проекта справа
-        projectScreens[3].mesh.visible = true; // Показываем буферный
-        projectScreens[3].mesh.position.x = positions[2] + screenDistance; // За правым краем
-        projectScreens[3].currentX = positions[2] + screenDistance;
-        projectScreens[3].targetX = positions[2]; // Въедет на место правого
-        projectScreens[3].currentScale = 0.8; // Начальный размер
-        projectScreens[3].currentOpacity = 0.6; // Начальная прозрачность
-        
-        // Устанавливаем начальный масштаб для буферного экрана
-        projectScreens[3].mesh.scale.set(0.8, 0.8, 1);
-        if (projectScreens[3].mesh.material) {
-            projectScreens[3].mesh.material.opacity = 0.6;
+        // Перемещаем скрытый экран за правый край для въезда
+        projectScreens[hiddenScreenIndex].mesh.visible = true;
+        projectScreens[hiddenScreenIndex].mesh.position.x = positions[2] + screenDistance;
+        projectScreens[hiddenScreenIndex].currentX = positions[2] + screenDistance;
+        projectScreens[hiddenScreenIndex].targetX = positions[2];
+        projectScreens[hiddenScreenIndex].currentScale = 0.8;
+        projectScreens[hiddenScreenIndex].currentOpacity = 0.6;
+        projectScreens[hiddenScreenIndex].mesh.scale.set(0.8, 0.8, 1);
+        if (projectScreens[hiddenScreenIndex].mesh.material) {
+            projectScreens[hiddenScreenIndex].mesh.material.opacity = 0.6;
         }
         
-        // Основные экраны остаются на местах и смещаются влево
-        projectScreens[0].currentX = positions[0];
-        projectScreens[0].targetX = positions[0] - screenDistance; // Уедет влево
+        // Остальные видимые экраны смещаются влево
+        for (let i = 0; i < 4; i++) {
+            if (i !== hiddenScreenIndex && projectScreens[i].mesh.visible) {
+                projectScreens[i].currentX = projectScreens[i].mesh.position.x;
+                projectScreens[i].targetX = projectScreens[i].mesh.position.x - screenDistance;
+            }
+        }
         
-        projectScreens[1].currentX = positions[1];
-        projectScreens[1].targetX = positions[0]; // Центр → Левый
-        
-        projectScreens[2].currentX = positions[2];
-        projectScreens[2].targetX = positions[1]; // Правый → Центр
-        
-        console.log('next: Буферный экран[3] за правым краем, экран[0] уедет влево');
+        console.log(`next: Скрытый экран[${hiddenScreenIndex}] за правым краем, будет въезжать`);
     } else if (direction === 'prev') {
-        // При prev используем буферный экран[3] для нового проекта слева
-        projectScreens[3].mesh.visible = true; // Показываем буферный
-        projectScreens[3].mesh.position.x = positions[0] - screenDistance; // За левым краем
-        projectScreens[3].currentX = positions[0] - screenDistance;
-        projectScreens[3].targetX = positions[0]; // Въедет на место левого
-        projectScreens[3].currentScale = 0.8; // Начальный размер
-        projectScreens[3].currentOpacity = 0.6; // Начальная прозрачность
-        
-        // Устанавливаем начальный масштаб для буферного экрана
-        projectScreens[3].mesh.scale.set(0.8, 0.8, 1);
-        if (projectScreens[3].mesh.material) {
-            projectScreens[3].mesh.material.opacity = 0.6;
+        // Перемещаем скрытый экран за левый край для въезда
+        projectScreens[hiddenScreenIndex].mesh.visible = true;
+        projectScreens[hiddenScreenIndex].mesh.position.x = positions[0] - screenDistance;
+        projectScreens[hiddenScreenIndex].currentX = positions[0] - screenDistance;
+        projectScreens[hiddenScreenIndex].targetX = positions[0];
+        projectScreens[hiddenScreenIndex].currentScale = 0.8;
+        projectScreens[hiddenScreenIndex].currentOpacity = 0.6;
+        projectScreens[hiddenScreenIndex].mesh.scale.set(0.8, 0.8, 1);
+        if (projectScreens[hiddenScreenIndex].mesh.material) {
+            projectScreens[hiddenScreenIndex].mesh.material.opacity = 0.6;
         }
         
-        // Основные экраны остаются на местах и смещаются вправо
-        projectScreens[0].currentX = positions[0];
-        projectScreens[0].targetX = positions[1]; // Левый → Центр
+        // Остальные видимые экраны смещаются вправо
+        for (let i = 0; i < 4; i++) {
+            if (i !== hiddenScreenIndex && projectScreens[i].mesh.visible) {
+                projectScreens[i].currentX = projectScreens[i].mesh.position.x;
+                projectScreens[i].targetX = projectScreens[i].mesh.position.x + screenDistance;
+            }
+        }
         
-        projectScreens[1].currentX = positions[1];
-        projectScreens[1].targetX = positions[2]; // Центр → Правый
-        
-        projectScreens[2].currentX = positions[2];
-        projectScreens[2].targetX = positions[2] + screenDistance; // Уедет вправо
-        
-        console.log('prev: Буферный экран[3] за левым краем, экран[2] уедет вправо');
+        console.log(`prev: Скрытый экран[${hiddenScreenIndex}] за левым краем, будет въезжать`);
     }
     
     // Устанавливаем целевые масштабы в зависимости от целевых позиций
@@ -795,15 +803,15 @@ function startGalleryAnimation(direction) {
         console.log(`  Экран[${index}]: currentScale=${screen.currentScale.toFixed(2)} → targetScale=${screen.targetScale}, targetX=${screen.targetX.toFixed(2)}, willBeCenter=${willBeInCenter}`);
     });
     
-    console.log('🔄 Загружаем текстуру на буферный экран...');
+    console.log(`🔄 Загружаем текстуру на въезжающий экран[${hiddenScreenIndex}]...`);
     
-    // Загружаем текстуру на буферный экран[3]
+    // Загружаем текстуру на найденный скрытый экран
     if (direction === 'next') {
-        // Загружаем следующий проект на буферный экран
-        loadProjectTexture(3, (currentProjectIndex + 1) % projects.length);
+        // Загружаем следующий проект
+        loadProjectTexture(hiddenScreenIndex, (currentProjectIndex + 1) % projects.length);
     } else if (direction === 'prev') {
-        // Загружаем предыдущий проект на буферный экран
-        loadProjectTexture(3, (currentProjectIndex - 1 + projects.length) % projects.length);
+        // Загружаем предыдущий проект
+        loadProjectTexture(hiddenScreenIndex, (currentProjectIndex - 1 + projects.length) % projects.length);
     }
     
     isAnimating = true;
