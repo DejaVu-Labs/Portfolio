@@ -6,7 +6,7 @@ let currentImageIndex = 0;
 let projectScreens = []; // Массив для хранения 3 экранов проектов
 let isAnimating = false; // Флаг анимации
 let animationStartTime = 0; // Время начала анимации
-let animationDuration = 400; // Длительность анимации в миллисекундах
+let animationDuration = 4000; // Длительность анимации в миллисекундах (замедлено в 10 раз для отладки)
 let clippingPlanes = []; // Плоскости обрезки для экрана
 
 // Функция плавности (easing) для анимации
@@ -469,6 +469,11 @@ function updateProjectViewScreen() {
 // Загрузка текстуры проекта на конкретный экран
 function loadProjectTexture(screenIndex, projectIndex) {
     const project = projects[projectIndex];
+    const currentScale = projectScreens[screenIndex].mesh.scale.x.toFixed(2);
+    const currentPos = projectScreens[screenIndex].mesh.position.x.toFixed(2);
+    
+    console.log(`🔄 Загружаю текстуру: экран[${screenIndex}] = проект[${projectIndex}] "${project.name}", pos=${currentPos}, scale=${currentScale}`);
+    
     const loader = new THREE.TextureLoader();
     
     loader.load(
@@ -493,6 +498,10 @@ function loadProjectTexture(screenIndex, projectIndex) {
                 clipShadows: true
             });
             projectScreens[screenIndex].mesh.material.needsUpdate = true;
+            
+            const newScale = projectScreens[screenIndex].mesh.scale.x.toFixed(2);
+            const newPos = projectScreens[screenIndex].mesh.position.x.toFixed(2);
+            console.log(`✅ Текстура загружена: экран[${screenIndex}] = проект[${projectIndex}] "${project.name}", pos=${newPos}, scale=${newScale}`);
         },
         undefined,
         (error) => {
@@ -694,7 +703,12 @@ function startGalleryAnimation(direction) {
         return;
     }
     
-    console.log('Запуск анимации галереи, проект:', currentProjectIndex, 'направление:', direction);
+    console.log('⚡ ЗАПУСК АНИМАЦИИ ГАЛЕРЕИ');
+    console.log('Проект:', currentProjectIndex, 'Направление:', direction);
+    console.log('Состояние экранов ПЕРЕД анимацией:');
+    projectScreens.forEach((screen, index) => {
+        console.log(`  Экран[${index}]: pos=${screen.mesh.position.x.toFixed(2)}, scale=${screen.mesh.scale.x.toFixed(2)}, opacity=${screen.mesh.material?.opacity?.toFixed(2) || 'N/A'}`);
+    });
     
     // Расстояние между экранами
     const screenDistance = 1.6;
@@ -754,6 +768,8 @@ function startGalleryAnimation(direction) {
         screen.targetOpacity = willBeCenter ? 1.0 : 0.6;
     });
     
+    console.log('🔄 Загружаем текстуру на входящий экран...');
+    
     // Загружаем текстуру ТОЛЬКО на входящий экран до начала анимации
     if (direction === 'next') {
         // Загружаем новый проект на правый экран (index=2)
@@ -767,11 +783,12 @@ function startGalleryAnimation(direction) {
     animationStartTime = performance.now();
     
     // Логируем параметры анимации
+    console.log('Параметры анимации:');
     projectScreens.forEach((screen, index) => {
-        console.log(`Экран ${index}: currentX=${screen.currentX.toFixed(2)}, targetX=${screen.targetX.toFixed(2)}, scale: ${screen.currentScale.toFixed(2)} → ${screen.targetScale}`);
+        console.log(`  Экран[${index}]: currentX=${screen.currentX.toFixed(2)} → targetX=${screen.targetX.toFixed(2)}, scale: ${screen.currentScale.toFixed(2)} → ${screen.targetScale}`);
     });
     
-    console.log('Анимация началась, isAnimating:', isAnimating);
+    console.log('✅ Анимация запущена!');
 }
 
 // Режим просмотра проекта
@@ -836,7 +853,12 @@ function updateGalleryAnimation() {
     if (progress >= 1.0) {
         progress = 1.0;
         isAnimating = false;
-        console.log('Анимация завершена');
+        
+        console.log('⚡ ФИНАЛИЗАЦИЯ АНИМАЦИИ');
+        console.log('Состояние экранов ПОСЛЕ анимации (перед изменениями):');
+        projectScreens.forEach((screen, index) => {
+            console.log(`  Экран[${index}]: pos=${screen.mesh.position.x.toFixed(2)}, scale=${screen.mesh.scale.x.toFixed(2)}, opacity=${screen.mesh.material?.opacity.toFixed(2)}`);
+        });
         
         // После завершения анимации возвращаем экраны в стандартные позиции
         const positions = [-1.6, 0, 1.6];
@@ -859,6 +881,13 @@ function updateGalleryAnimation() {
                 screen.targetOpacity = finalOpacity;
             }
         });
+        
+        console.log('Состояние ПОСЛЕ возврата позиций и размеров (ПЕРЕД загрузкой текстур):');
+        projectScreens.forEach((screen, index) => {
+            console.log(`  Экран[${index}]: pos=${screen.mesh.position.x.toFixed(2)}, scale=${screen.mesh.scale.x.toFixed(2)}, opacity=${screen.mesh.material?.opacity.toFixed(2)}`);
+        });
+        
+        console.log('🔄 Начинаем загрузку текстур...');
         
         // Обновляем текстуры всех экранов после завершения анимации
         loadProjectTexture(0, (currentProjectIndex - 1 + projects.length) % projects.length); // Левый
