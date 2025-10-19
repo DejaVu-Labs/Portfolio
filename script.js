@@ -6,7 +6,7 @@ let currentImageIndex = 0;
 let projectScreens = []; // Массив для хранения 3 экранов проектов
 let isAnimating = false; // Флаг анимации
 let animationStartTime = 0; // Время начала анимации
-let animationDuration = 4000; // Длительность анимации в миллисекундах (замедлено в 10 раз для отладки)
+let animationDuration = 400; // Длительность анимации в миллисекундах
 let clippingPlanes = []; // Плоскости обрезки для экрана
 
 // Функция плавности (easing) для анимации
@@ -189,14 +189,12 @@ function createPSP() {
     screen.position.set(0, 0.5, 0.44);
     psp.add(screen);
 
-    console.log('Экран PSP создан, загружаем фоновое изображение...');
     
     // Загружаем фоновое изображение
     const backgroundLoader = new THREE.TextureLoader();
     backgroundLoader.load(
         'images/background.png',
         (texture) => {
-            console.log('✓ Фоновое изображение загружено');
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
             texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -213,7 +211,6 @@ function createPSP() {
         }
     );
 
-    console.log('Создаем экраны проектов...');
 
     // Создание 3 экранов для проектов (левый, центральный, правый)
     createProjectScreens();
@@ -256,7 +253,6 @@ function createPSP() {
         new THREE.Plane(new THREE.Vector3(-1, 0, 0), screenHalfWidth)  // Правая граница (нормаль влево, обрезает справа)
     ];
     
-    console.log('Clipping planes созданы, границы:', -screenHalfWidth, screenHalfWidth);
 }
 
 // Создание кнопок управления
@@ -437,7 +433,6 @@ function updateProjectViewScreen() {
     const currentProject = projects[currentProjectIndex];
     const imageUrl = currentProject.images[currentImageIndex];
     
-    console.log('Режим просмотра проекта, изображение:', currentImageIndex + 1);
     
     // Скрываем боковые и буферный экраны
     projectScreens[0].mesh.visible = false;
@@ -475,11 +470,6 @@ function updateProjectViewScreen() {
 // Загрузка текстуры проекта на конкретный экран
 function loadProjectTexture(screenIndex, projectIndex) {
     const project = projects[projectIndex];
-    const currentScale = projectScreens[screenIndex].mesh.scale.x.toFixed(2);
-    const currentPos = projectScreens[screenIndex].mesh.position.x.toFixed(2);
-    
-    console.log(`🔄 Загружаю текстуру: экран[${screenIndex}] = проект[${projectIndex}] "${project.name}", pos=${currentPos}, scale=${currentScale}`);
-    
     const loader = new THREE.TextureLoader();
     
     loader.load(
@@ -504,10 +494,6 @@ function loadProjectTexture(screenIndex, projectIndex) {
                 clipShadows: true
             });
             projectScreens[screenIndex].mesh.material.needsUpdate = true;
-            
-            const newScale = projectScreens[screenIndex].mesh.scale.x.toFixed(2);
-            const newPos = projectScreens[screenIndex].mesh.position.x.toFixed(2);
-            console.log(`✅ Текстура загружена: экран[${screenIndex}] = проект[${projectIndex}] "${project.name}", pos=${newPos}, scale=${newScale}`);
         },
         undefined,
         (error) => {
@@ -518,7 +504,6 @@ function loadProjectTexture(screenIndex, projectIndex) {
 
 // Обновление экранов в режиме галереи
 function updateGalleryScreens(direction) {
-    console.log('Режим галереи, текущий проект:', currentProjectIndex, 'направление:', direction);
     
     // Показываем только первые 3 экрана (не буферный)
     for (let i = 0; i < 3; i++) {
@@ -657,7 +642,6 @@ function handleInteraction(event) {
             buttonToAnimate = button.parent; // Анимируем всю группу
         }
 
-        console.log('Нажата кнопка:', userData.action, 'тип события:', event.type);
         handleButtonClick(userData.action);
         
         // Анимация нажатия
@@ -667,7 +651,6 @@ function handleInteraction(event) {
 
 // Обработка нажатий кнопок
 function handleButtonClick(action) {
-    console.log('handleButtonClick вызван с action:', action, 'isProjectViewMode:', isProjectViewMode);
     if (isProjectViewMode) {
         // Действия в режиме просмотра проекта
         if (action === 'back') {
@@ -710,13 +693,6 @@ function startGalleryAnimation(direction) {
         return;
     }
     
-    console.log('⚡ ЗАПУСК АНИМАЦИИ ГАЛЕРЕИ');
-    console.log('Проект:', currentProjectIndex, 'Направление:', direction);
-    console.log('Состояние экранов ПЕРЕД анимацией:');
-    projectScreens.forEach((screen, index) => {
-        console.log(`  Экран[${index}]: pos=${screen.mesh.position.x.toFixed(2)}, scale=${screen.mesh.scale.x.toFixed(2)}, opacity=${screen.mesh.material?.opacity?.toFixed(2) || 'N/A'}`);
-    });
-    
     // Расстояние между экранами
     const screenDistance = 1.6;
     
@@ -731,7 +707,6 @@ function startGalleryAnimation(direction) {
     for (let i = 0; i < 4; i++) {
         if (!projectScreens[i].mesh.visible || Math.abs(projectScreens[i].mesh.position.x) > 2.5) {
             hiddenScreenIndex = i;
-            console.log(`Найден скрытый экран: [${i}] на позиции ${projectScreens[i].mesh.position.x.toFixed(2)}`);
             break;
         }
     }
@@ -739,7 +714,6 @@ function startGalleryAnimation(direction) {
     // Если не нашли скрытый, используем экран[3] (буферный)
     if (hiddenScreenIndex === -1) {
         hiddenScreenIndex = 3;
-        console.log('Скрытый экран не найден, используем буферный [3]');
     }
     
     // Устанавливаем начальные и целевые позиции в зависимости от направления
@@ -766,7 +740,6 @@ function startGalleryAnimation(direction) {
             }
         }
         
-        console.log(`next: Скрытый экран[${hiddenScreenIndex}] за правым краем, будет въезжать`);
     } else if (direction === 'prev') {
         // Перемещаем скрытый экран за левый край для въезда
         projectScreens[hiddenScreenIndex].mesh.visible = true;
@@ -788,22 +761,16 @@ function startGalleryAnimation(direction) {
             }
         }
         
-        console.log(`prev: Скрытый экран[${hiddenScreenIndex}] за левым краем, будет въезжать`);
     }
     
     // Устанавливаем целевые масштабы в зависимости от целевых позиций
-    console.log('Установка целевых масштабов:');
     projectScreens.forEach((screen, index) => {
         // Кто будет в центре (targetX близок к 0)?
         const willBeInCenter = Math.abs(screen.targetX) < 0.1;
         
         screen.targetScale = willBeInCenter ? 1.0 : 0.8;
         screen.targetOpacity = willBeInCenter ? 1.0 : 0.6;
-        
-        console.log(`  Экран[${index}]: currentScale=${screen.currentScale.toFixed(2)} → targetScale=${screen.targetScale}, targetX=${screen.targetX.toFixed(2)}, willBeCenter=${willBeInCenter}`);
     });
-    
-    console.log(`🔄 Загружаем текстуру на въезжающий экран[${hiddenScreenIndex}]...`);
     
     // Загружаем текстуру на найденный скрытый экран
     if (direction === 'next') {
@@ -816,26 +783,16 @@ function startGalleryAnimation(direction) {
     
     isAnimating = true;
     animationStartTime = performance.now();
-    
-    // Логируем параметры анимации
-    console.log('Параметры анимации:');
-    projectScreens.forEach((screen, index) => {
-        console.log(`  Экран[${index}]: currentX=${screen.currentX.toFixed(2)} → targetX=${screen.targetX.toFixed(2)}, scale: ${screen.currentScale.toFixed(2)} → ${screen.targetScale}`);
-    });
-    
-    console.log('✅ Анимация запущена!');
 }
 
 // Режим просмотра проекта
 function openProjectView() {
-    console.log('Открываем просмотр проекта:', currentProjectIndex);
     isProjectViewMode = true;
     currentImageIndex = 0;
     updateScreenTexture();
 }
 
 function closeProjectView() {
-    console.log('Закрываем просмотр проекта');
     isProjectViewMode = false;
     currentImageIndex = 0;
     updateScreenTexture();
@@ -889,12 +846,6 @@ function updateGalleryAnimation() {
         progress = 1.0;
         isAnimating = false;
         
-        console.log('⚡ ФИНАЛИЗАЦИЯ АНИМАЦИИ');
-        console.log('Финальное состояние экранов:');
-        projectScreens.forEach((screen, index) => {
-            console.log(`  Экран[${index}]: pos=${screen.mesh.position.x.toFixed(2)}, scale=${screen.mesh.scale.x.toFixed(2)}, opacity=${screen.mesh.material?.opacity.toFixed(2)}, visible=${screen.mesh.visible}`);
-        });
-        
         // НЕ возвращаем позиции! Просто фиксируем текущее состояние
         projectScreens.forEach((screen, index) => {
             screen.currentX = screen.mesh.position.x;
@@ -906,17 +857,8 @@ function updateGalleryAnimation() {
             const isOutOfBounds = Math.abs(screen.mesh.position.x) > 2.5;
             if (isOutOfBounds) {
                 screen.mesh.visible = false;
-                console.log(`  Скрываем экран[${index}] (за границей, pos=${screen.mesh.position.x.toFixed(2)})`);
             }
         });
-        
-        console.log('✅ Анимация завершена (позиции и текстуры НЕ меняем!)');
-        console.log('Видимые экраны после анимации:');
-        for (let i = 0; i < 4; i++) {
-            if (projectScreens[i].mesh.visible) {
-                console.log(`  Экран[${i}]: pos=${projectScreens[i].mesh.position.x.toFixed(2)}, scale=${projectScreens[i].mesh.scale.x.toFixed(2)}`);
-            }
-        }
         
         return;
     }
