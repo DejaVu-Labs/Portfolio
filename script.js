@@ -878,10 +878,14 @@ function updateGalleryAnimation() {
             screen.targetX = screen.currentX;
             screen.currentScale = screen.mesh.scale.x;
             screen.currentOpacity = screen.mesh.material ? screen.mesh.material.opacity : 0.6;
+            
+            // Скрываем экраны которые уехали за пределы видимой области
+            const isOutOfBounds = Math.abs(screen.mesh.position.x) > 2.5;
+            if (isOutOfBounds) {
+                screen.mesh.visible = false;
+                console.log(`  Скрываем экран[${index}] (за границей, pos=${screen.mesh.position.x.toFixed(2)})`);
+            }
         });
-        
-        // Скрываем буферный экран - он больше не нужен
-        projectScreens[3].mesh.visible = false;
         
         console.log('✅ Анимация завершена (позиции и текстуры НЕ меняем!)');
         console.log('Видимые экраны после анимации:');
