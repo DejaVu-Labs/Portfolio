@@ -85,7 +85,7 @@ function initRenderTarget() {
 function createProjectMeshes() {
     // Создаем 4 меша (3 видимых + 1 буферный)
     for (let i = 0; i < 4; i++) {
-        const geometry = new THREE.PlaneGeometry(3.2, 2.4); // Увеличиваем размеры в 2 раза для соответствия frustumSize = 8
+        const geometry = new THREE.PlaneGeometry(4.8, 3.6); // Увеличиваем размеры проектов еще больше
         const material = new THREE.MeshBasicMaterial({
             color: 0xffffff,
             side: THREE.DoubleSide,
@@ -95,8 +95,8 @@ function createProjectMeshes() {
         
         const mesh = new THREE.Mesh(geometry, material);
         
-        // Устанавливаем начальные позиции (увеличиваем в 2 раза)
-        const positions = [-3.2, 0, 3.2, 6.4]; // Левый, центр, правый, буферный
+        // Устанавливаем начальные позиции (увеличиваем для больших проектов)
+        const positions = [-4.8, 0, 4.8, 9.6]; // Левый, центр, правый, буферный
         mesh.position.set(positions[i], 0, 0);
         mesh.visible = i < 3; // Буферный скрыт
         
@@ -727,8 +727,8 @@ function startGalleryAnimation(direction) {
         return;
     }
     
-    // Расстояние между экранами (увеличиваем в 2 раза)
-    const screenDistance = 3.2;
+    // Расстояние между экранами (увеличиваем для больших проектов)
+    const screenDistance = 4.8;
     
     // Сохраняем текущие параметры перед началом анимации
     projectMeshes.forEach((projectMesh, index) => {
@@ -739,7 +739,7 @@ function startGalleryAnimation(direction) {
     // Сначала находим который экран находится за границей (скрытый)
     let hiddenScreenIndex = -1;
     for (let i = 0; i < 4; i++) {
-        if (!projectMeshes[i].mesh.visible || Math.abs(projectMeshes[i].mesh.position.x) > 5.0) {
+        if (!projectMeshes[i].mesh.visible || Math.abs(projectMeshes[i].mesh.position.x) > 7.5) {
             hiddenScreenIndex = i;
             break;
         }
@@ -887,8 +887,8 @@ function updateGalleryAnimation() {
             projectMesh.currentScale = projectMesh.mesh.scale.x;
             projectMesh.currentOpacity = projectMesh.mesh.material ? projectMesh.mesh.material.opacity : 0.6;
             
-            // Скрываем экраны которые уехали за пределы видимой области (увеличиваем границу в 2 раза)
-            const isOutOfBounds = Math.abs(projectMesh.mesh.position.x) > 5.0;
+            // Скрываем экраны которые уехали за пределы видимой области
+            const isOutOfBounds = Math.abs(projectMesh.mesh.position.x) > 7.5;
             if (isOutOfBounds) {
                 projectMesh.mesh.visible = false;
             }
