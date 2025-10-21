@@ -24,33 +24,33 @@ const SCREEN_SIZE = {
 
 // Функции конвертации пикселей в размеры Three.js
 const CONVERT = {
-    // Конвертация ширины из пикселей в единицы Three.js
-    width: (pixels) => (pixels / SCREEN_SIZE.WIDTH) * 16,
+    // Конвертация ширины из пикселей в единицы Three.js (1:1 соответствие)
+    width: (pixels) => pixels,
     
-    // Конвертация высоты из пикселей в единицы Three.js
-    height: (pixels) => (pixels / SCREEN_SIZE.HEIGHT) * 9,
+    // Конвертация высоты из пикселей в единицы Three.js (1:1 соответствие)
+    height: (pixels) => pixels,
     
     // Конвертация X позиции из пикселей в единицы Three.js (от левого края)
-    x: (pixels) => (pixels / SCREEN_SIZE.WIDTH) * 16 - 8, // -8 для центрирования
+    x: (pixels) => pixels - SCREEN_SIZE.WIDTH/2, // -960 для центрирования
     
     // Конвертация Y позиции из пикселей в единицы Three.js (от верхнего края)
-    y: (pixels) => 4.5 - (pixels / SCREEN_SIZE.HEIGHT) * 9 // 4.5 для центрирования, инвертируем Y
+    y: (pixels) => SCREEN_SIZE.HEIGHT/2 - pixels // 540 для центрирования, Y уже инвертирован в камере
 };
 
-// Размеры проектов
+// Размеры проектов (теперь в пикселях для соответствия новой камере)
 const PROJECT_SIZES = {
-    ACTIVE_WIDTH: 6.4,    // Ширина активного проекта
-    ACTIVE_HEIGHT: 3.6,   // Высота активного проекта
+    ACTIVE_WIDTH: 640,    // Ширина активного проекта в пикселях
+    ACTIVE_HEIGHT: 360,   // Высота активного проекта в пикселях
     ACTIVE_SCALE: 1.0,    // Масштаб активного проекта
     INACTIVE_SCALE: 0.45  // Масштаб неактивных проектов
 };
 
-// Позиции проектов
+// Позиции проектов (теперь в пикселях)
 const PROJECT_POSITIONS = {
-    LEFT: -4.8,      // Левый проект
-    CENTER: 0,       // Центральный проект
-    RIGHT: 4.8,      // Правый проект
-    BUFFER: 9.6      // Буферный проект
+    LEFT: 320,      // Левый проект (320px от левого края)
+    CENTER: 960,    // Центральный проект (960px от левого края)
+    RIGHT: 1600,    // Правый проект (1600px от левого края)
+    BUFFER: 1920    // Буферный проект (1920px от левого края)
 };
 
 // Функция плавности (easing) для анимации
@@ -61,8 +61,8 @@ function easeInOutCubic(t) {
 // Инициализация системы рендер-таргета
 function initRenderTarget() {
     // Размер рендер-таргета (высокое разрешение для четкости)
-    const renderWidth = 1920;
-    const renderHeight = 1080;
+    const renderWidth = SCREEN_SIZE.WIDTH;
+    const renderHeight = SCREEN_SIZE.HEIGHT;
     
     // Создаем рендер-таргет
     renderTarget = new THREE.WebGLRenderTarget(renderWidth, renderHeight, {
@@ -77,10 +77,10 @@ function initRenderTarget() {
     
     // Создаем ортогональную камеру для рендер-таргета
     const aspect = renderWidth / renderHeight;
-    const frustumSize = 8; // Увеличиваем размер области рендеринга для соответствия старой карусели
+    // Размеры камеры идентичны размерам экрана (исправляем инверсию Y)
     renderCamera = new THREE.OrthographicCamera(
-        -frustumSize * aspect / 2, frustumSize * aspect / 2,
-        frustumSize / 2, -frustumSize / 2,
+        -SCREEN_SIZE.WIDTH/2, SCREEN_SIZE.WIDTH/2,  // X: от -960 до +960
+        SCREEN_SIZE.HEIGHT/2, -SCREEN_SIZE.HEIGHT/2,  // Y: от +540 до -540 (инвертировано)
         0.1, 1000
     );
     renderCamera.position.z = 5;
@@ -95,8 +95,8 @@ function initRenderTarget() {
             texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
             backgroundTexture = texture;
             
-            // Создаем фоновую плоскость (увеличиваем для соответствия frustumSize = 8)
-            const backgroundGeometry = new THREE.PlaneGeometry(16, 9);
+            // Создаем фоновую плоскость (соответствует камере SCREEN_SIZE.WIDTHxSCREEN_SIZE.HEIGHT)
+            const backgroundGeometry = new THREE.PlaneGeometry(SCREEN_SIZE.WIDTH, SCREEN_SIZE.HEIGHT);
             const backgroundMaterial = new THREE.MeshBasicMaterial({
                 map: backgroundTexture,
                 side: THREE.DoubleSide
@@ -281,9 +281,10 @@ function createProjectMeshes() {
         
         const mesh = new THREE.Mesh(geometry, material);
         
-        // Устанавливаем начальные позиции из констант
+        // Устанавливаем начальные позиции из констант (конвертируем в координаты Three.js)
         const positions = [PROJECT_POSITIONS.LEFT, PROJECT_POSITIONS.CENTER, PROJECT_POSITIONS.RIGHT, PROJECT_POSITIONS.BUFFER];
-        mesh.position.set(positions[i], 0, 0);
+        const x = CONVERT.x(positions[i]);
+        mesh.position.set(x, 0, 0);
         mesh.visible = i < 3; // Буферный скрыт
         
         // Применяем правильные масштабы сразу при создании
@@ -292,8 +293,8 @@ function createProjectMeshes() {
         renderScene.add(mesh);
         projectMeshes.push({
             mesh: mesh,
-            currentX: positions[i],
-            targetX: positions[i],
+            currentX: x,
+            targetX: x,
             currentScale: scale,
             targetScale: scale,
             currentOpacity: i === 1 ? 1.0 : 0.6,
@@ -911,8 +912,8 @@ function startGalleryAnimation(direction) {
         return;
     }
     
-    // Расстояние между экранами (с учетом новых размеров)
-    const screenDistance = 4.8;
+    // Расстояние между экранами (в пикселях)
+    const screenDistance = 640; // 640px между проектами
     
     // Сохраняем текущие параметры перед началом анимации
     projectMeshes.forEach((projectMesh, index) => {
@@ -923,7 +924,7 @@ function startGalleryAnimation(direction) {
     // Сначала находим который экран находится за границей (скрытый)
     let hiddenScreenIndex = -1;
     for (let i = 0; i < 4; i++) {
-        if (!projectMeshes[i].mesh.visible || Math.abs(projectMeshes[i].mesh.position.x) > 7.5) {
+        if (!projectMeshes[i].mesh.visible || Math.abs(projectMeshes[i].mesh.position.x) > SCREEN_SIZE.WIDTH) {
             hiddenScreenIndex = i;
             break;
         }
@@ -934,15 +935,17 @@ function startGalleryAnimation(direction) {
         hiddenScreenIndex = 3;
     }
     
-    // Устанавливаем позиции из констант
+    // Устанавливаем позиции из констант (конвертируем в координаты Three.js)
     const positions = [PROJECT_POSITIONS.LEFT, PROJECT_POSITIONS.CENTER, PROJECT_POSITIONS.RIGHT];
+    const convertedPositions = positions.map(pos => CONVERT.x(pos));
     
     if (direction === 'next') {
         // Перемещаем скрытый экран за правый край для въезда
         projectMeshes[hiddenScreenIndex].mesh.visible = true;
-        projectMeshes[hiddenScreenIndex].mesh.position.x = positions[2] + screenDistance;
-        projectMeshes[hiddenScreenIndex].currentX = positions[2] + screenDistance;
-        projectMeshes[hiddenScreenIndex].targetX = positions[2];
+        const rightEdgeX = CONVERT.x(PROJECT_POSITIONS.RIGHT + screenDistance);
+        projectMeshes[hiddenScreenIndex].mesh.position.x = rightEdgeX;
+        projectMeshes[hiddenScreenIndex].currentX = rightEdgeX;
+        projectMeshes[hiddenScreenIndex].targetX = convertedPositions[2];
         projectMeshes[hiddenScreenIndex].currentScale = 0.8;
         projectMeshes[hiddenScreenIndex].currentOpacity = 0.6;
         projectMeshes[hiddenScreenIndex].mesh.scale.set(0.8, 0.8, 1);
@@ -954,16 +957,17 @@ function startGalleryAnimation(direction) {
         for (let i = 0; i < 4; i++) {
             if (i !== hiddenScreenIndex && projectMeshes[i].mesh.visible) {
                 projectMeshes[i].currentX = projectMeshes[i].mesh.position.x;
-                projectMeshes[i].targetX = projectMeshes[i].mesh.position.x - screenDistance;
+                projectMeshes[i].targetX = projectMeshes[i].mesh.position.x - CONVERT.width(screenDistance);
             }
         }
         
     } else if (direction === 'prev') {
         // Перемещаем скрытый экран за левый край для въезда
         projectMeshes[hiddenScreenIndex].mesh.visible = true;
-        projectMeshes[hiddenScreenIndex].mesh.position.x = positions[0] - screenDistance;
-        projectMeshes[hiddenScreenIndex].currentX = positions[0] - screenDistance;
-        projectMeshes[hiddenScreenIndex].targetX = positions[0];
+        const leftEdgeX = CONVERT.x(PROJECT_POSITIONS.LEFT - screenDistance);
+        projectMeshes[hiddenScreenIndex].mesh.position.x = leftEdgeX;
+        projectMeshes[hiddenScreenIndex].currentX = leftEdgeX;
+        projectMeshes[hiddenScreenIndex].targetX = convertedPositions[0];
         projectMeshes[hiddenScreenIndex].currentScale = 0.8;
         projectMeshes[hiddenScreenIndex].currentOpacity = 0.6;
         projectMeshes[hiddenScreenIndex].mesh.scale.set(0.8, 0.8, 1);
@@ -975,7 +979,7 @@ function startGalleryAnimation(direction) {
         for (let i = 0; i < 4; i++) {
             if (i !== hiddenScreenIndex && projectMeshes[i].mesh.visible) {
                 projectMeshes[i].currentX = projectMeshes[i].mesh.position.x;
-                projectMeshes[i].targetX = projectMeshes[i].mesh.position.x + screenDistance;
+                projectMeshes[i].targetX = projectMeshes[i].mesh.position.x + CONVERT.width(screenDistance);
             }
         }
         
@@ -983,8 +987,9 @@ function startGalleryAnimation(direction) {
     
     // Устанавливаем целевые масштабы в зависимости от целевых позиций
     projectMeshes.forEach((projectMesh, index) => {
-        // Кто будет в центре (targetX близок к 0)?
-        const willBeInCenter = Math.abs(projectMesh.targetX) < 0.1;
+        // Кто будет в центре (targetX близок к центру экрана)?
+        const centerX = CONVERT.x(SCREEN_SIZE.WIDTH / 2); // Центр экрана
+        const willBeInCenter = Math.abs(projectMesh.targetX - centerX) < 50; // 50px допуск
         
         projectMesh.targetScale = willBeInCenter ? PROJECT_SIZES.ACTIVE_SCALE : PROJECT_SIZES.INACTIVE_SCALE;
         projectMesh.targetOpacity = willBeInCenter ? 1.0 : 0.6;
@@ -1072,7 +1077,8 @@ function updateGalleryAnimation() {
             projectMesh.currentOpacity = projectMesh.mesh.material ? projectMesh.mesh.material.opacity : 0.6;
             
             // Скрываем экраны которые уехали за пределы видимой области
-            const isOutOfBounds = Math.abs(projectMesh.mesh.position.x) > 7.5;
+            const screenWidth = SCREEN_SIZE.WIDTH;
+            const isOutOfBounds = Math.abs(projectMesh.mesh.position.x) > screenWidth;
             if (isOutOfBounds) {
                 projectMesh.mesh.visible = false;
             }
