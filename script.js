@@ -172,38 +172,33 @@ const projects = [
     {
         name: "Проект 1",
         images: [
-            createPlaceholderImage(2048, 1536, '#667eea', 'Проект 1 - Изображение 1'),
-            createPlaceholderImage(2048, 1536, '#764ba2', 'Проект 1 - Изображение 2'),
-            createPlaceholderImage(2048, 1536, '#f093fb', 'Проект 1 - Изображение 3')
+            'images/project1.png'
         ],
-        thumbnail: createPlaceholderImage(1920, 1088, '#667eea', 'Проект 1'),
+        thumbnail: 'images/project1.png',
         description: "Описание проекта 1 будет добавлено позже..."
     },
     {
         name: "Проект 2",
         images: [
-            createPlaceholderImage(2048, 1536, '#4facfe', 'Проект 2 - Изображение 1'),
-            createPlaceholderImage(2048, 1536, '#00f2fe', 'Проект 2 - Изображение 2')
+            'images/project2.png'
         ],
-        thumbnail: createPlaceholderImage(1920, 1088, '#4facfe', 'Проект 2'),
+        thumbnail: 'images/project2.png',
         description: "Описание проекта 2 будет добавлено позже..."
     },
     {
         name: "Проект 3",
         images: [
-            createPlaceholderImage(2048, 1536, '#43e97b', 'Проект 3 - Изображение 1'),
-            createPlaceholderImage(2048, 1536, '#38f9d7', 'Проект 3 - Изображение 2'),
-            createPlaceholderImage(2048, 1536, '#fa709a', 'Проект 3 - Изображение 3')
+            'images/project3.png'
         ],
-        thumbnail: createPlaceholderImage(1920, 1088, '#43e97b', 'Проект 3'),
+        thumbnail: 'images/project3.png',
         description: "Описание проекта 3 будет добавлено позже..."
     },
     {
         name: "Проект 4",
         images: [
-            createPlaceholderImage(2048, 1536, '#fa709a', 'Проект 4 - Изображение 1')
+            'images/project4.png'
         ],
-        thumbnail: createPlaceholderImage(1920, 1088, '#fa709a', 'Проект 4'),
+        thumbnail: 'images/project4.png',
         description: "Описание проекта 4 будет добавлено позже..."
     },
     {
