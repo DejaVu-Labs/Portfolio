@@ -87,11 +87,11 @@ function createProjectMeshes() {
     for (let i = 0; i < 4; i++) {
         // Создаем геометрию с правильным соотношением сторон (16:9)
         // Активный проект: ширина 6.4, высота 3.6 (соотношение 16:9)
-        // Неактивные проекты: ширина 4.8, высота 2.7 (соотношение 16:9, масштаб 0.75)
+        // Неактивные проекты: ширина 4.8, высота 2.7 (соотношение 16:9, масштаб 0.45)
         const isActive = i === 1;
         const baseWidth = 6.4; // Базовая ширина для активного
         const baseHeight = 3.6; // Базовая высота для активного
-        const scale = isActive ? 1.0 : 0.75; // Неактивные на 25% меньше
+        const scale = isActive ? 1.0 : 0.45; // Неактивные на 55% меньше
         
         const geometry = new THREE.PlaneGeometry(baseWidth, baseHeight);
         const material = new THREE.MeshBasicMaterial({
