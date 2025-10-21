@@ -16,6 +16,14 @@ let renderScene; // Отдельная сцена для рендер-тарге
 let backgroundTexture; // Текстура фона
 let projectMeshes = []; // Меши проектов для рендер-таргета
 
+// Размеры проектов
+const PROJECT_SIZES = {
+    ACTIVE_WIDTH: 6.4,    // Ширина активного проекта
+    ACTIVE_HEIGHT: 3.6,   // Высота активного проекта
+    ACTIVE_SCALE: 1.0,    // Масштаб активного проекта
+    INACTIVE_SCALE: 0.45  // Масштаб неактивных проектов
+};
+
 // Функция плавности (easing) для анимации
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -86,12 +94,10 @@ function createProjectMeshes() {
     // Создаем 4 меша (3 видимых + 1 буферный)
     for (let i = 0; i < 4; i++) {
         // Создаем геометрию с правильным соотношением сторон (16:9)
-        // Активный проект: ширина 6.4, высота 3.6 (соотношение 16:9)
-        // Неактивные проекты: ширина 4.8, высота 2.7 (соотношение 16:9, масштаб 0.45)
         const isActive = i === 1;
-        const baseWidth = 6.4; // Базовая ширина для активного
-        const baseHeight = 3.6; // Базовая высота для активного
-        const scale = isActive ? 1.0 : 0.45; // Неактивные на 55% меньше
+        const baseWidth = PROJECT_SIZES.ACTIVE_WIDTH;
+        const baseHeight = PROJECT_SIZES.ACTIVE_HEIGHT;
+        const scale = isActive ? PROJECT_SIZES.ACTIVE_SCALE : PROJECT_SIZES.INACTIVE_SCALE;
         
         const geometry = new THREE.PlaneGeometry(baseWidth, baseHeight);
         const material = new THREE.MeshBasicMaterial({
@@ -808,7 +814,7 @@ function startGalleryAnimation(direction) {
         // Кто будет в центре (targetX близок к 0)?
         const willBeInCenter = Math.abs(projectMesh.targetX) < 0.1;
         
-        projectMesh.targetScale = willBeInCenter ? 1.0 : 0.8;
+        projectMesh.targetScale = willBeInCenter ? PROJECT_SIZES.ACTIVE_SCALE : PROJECT_SIZES.INACTIVE_SCALE;
         projectMesh.targetOpacity = willBeInCenter ? 1.0 : 0.6;
     });
     
