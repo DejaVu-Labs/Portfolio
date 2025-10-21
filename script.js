@@ -93,8 +93,60 @@ function initRenderTarget() {
     // Создаем меши проектов для рендер-таргета
     createProjectMeshes();
     
+    // Создаем линию на экране
+    createScreenLine();
+    
     // Начальная загрузка текстур
     updateProjectScreens();
+}
+
+// Создание линии на экране PSP
+function createScreenLine() {
+    console.log('createScreenLine вызвана, renderScene:', renderScene);
+    if (!renderScene) {
+        console.log('renderScene не создан, выходим');
+        return;
+    }
+    
+    // Размеры относительно камеры рендер-таргета
+    // Камера имеет frustumSize = 8, aspect = 1920/1080 = 1.777
+    const frustumSize = 8;
+    const aspect = 1920 / 1080;
+    const backgroundWidth = frustumSize * aspect;  // 14.22 (видимая область по X)
+    const backgroundHeight = frustumSize;          // 8 (видимая область по Y)
+    
+    // Размеры линии точно по пикселям
+    const lineWidth = (1680 / 1920) * backgroundWidth;   // 1680px из 1920px = 14.0
+    const lineHeight = (5 / 1080) * backgroundHeight;     // 5px из 1080px = 0.042
+    
+    // Позиция относительно фона (123, 141 - абсолютные координаты от левого верхнего угла)
+    // X=123 - это начало линии, нужно добавить половину ширины линии для центрирования
+    const lineX = ((123 / 1920) * backgroundWidth) - (backgroundWidth / 2) + (lineWidth / 2);   // X=123 + половина ширины
+    const lineY = (backgroundHeight / 2) - ((141 / 1080) * backgroundHeight); // Y=141 от верхнего края (инвертируем Y)
+    
+    console.log(`Создаем линию: размер ${lineWidth}x${lineHeight}, позиция (${lineX}, ${lineY})`);
+    console.log(`Расчет: 1680/1920=${1680/1920}, 5/1080=${5/1080}`);
+    console.log(`Фон: ${backgroundWidth}x${backgroundHeight}`);
+    console.log(`Линия должна быть: 1680px ширина, 5px высота`);
+    console.log(`Линия должна начинаться с позиции (123, 141) от левого верхнего угла`);
+    console.log(`Текущая позиция центра линии: (${lineX}, ${lineY})`);
+    console.log(`Начало линии: (${lineX - lineWidth/2}, ${lineY})`);
+    console.log(`Конец линии: (${lineX + lineWidth/2}, ${lineY})`);
+    
+    const lineGeometry = new THREE.PlaneGeometry(lineWidth, lineHeight);
+    const lineMaterial = new THREE.MeshBasicMaterial({
+        color: 0xFFFFFF, // Белый цвет
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 1.0
+    });
+    
+    const line = new THREE.Mesh(lineGeometry, lineMaterial);
+    line.position.set(lineX, lineY, 2.0); // Еще выше для тестирования
+    line.visible = true;
+    
+    renderScene.add(line);
+    console.log('Линия добавлена в renderScene, количество объектов:', renderScene.children.length);
 }
 
 // Создание мешей проектов для рендер-таргета
