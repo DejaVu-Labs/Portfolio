@@ -100,13 +100,17 @@ function createProjectMeshes() {
         mesh.position.set(positions[i], 0, 0);
         mesh.visible = i < 3; // Буферный скрыт
         
+        // Применяем правильные масштабы сразу при создании
+        const scale = i === 1 ? 1.0 : 0.8; // Центральный большой, остальные маленькие
+        mesh.scale.set(scale, scale, 1);
+        
         renderScene.add(mesh);
         projectMeshes.push({
             mesh: mesh,
             currentX: positions[i],
             targetX: positions[i],
-            currentScale: i === 1 ? 1.0 : 0.8,
-            targetScale: i === 1 ? 1.0 : 0.8,
+            currentScale: scale,
+            targetScale: scale,
             currentOpacity: i === 1 ? 1.0 : 0.6,
             targetOpacity: i === 1 ? 1.0 : 0.6
         });
