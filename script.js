@@ -16,6 +16,12 @@ let renderScene; // Отдельная сцена для рендер-тарге
 let backgroundTexture; // Текстура фона
 let projectMeshes = []; // Меши проектов для рендер-таргета
 
+// Размеры экрана
+const SCREEN_SIZE = {
+    WIDTH: 1920,   // Ширина экрана в пикселях
+    HEIGHT: 1080   // Высота экрана в пикселях
+};
+
 // Размеры проектов
 const PROJECT_SIZES = {
     ACTIVE_WIDTH: 6.4,    // Ширина активного проекта
@@ -111,21 +117,21 @@ function createScreenLine() {
         return;
     }
     
-    // Размеры относительно камеры рендер-таргета
-    // Камера имеет frustumSize = 8, aspect = 1920/1080 = 1.777
-    const frustumSize = 8;
-    const aspect = 1920 / 1080;
-    const backgroundWidth = frustumSize * aspect;  // 14.22 (видимая область по X)
-    const backgroundHeight = frustumSize;          // 8 (видимая область по Y)
+    // Размеры относительно ортогональной камеры рендер-таргета
+    const aspect = SCREEN_SIZE.WIDTH / SCREEN_SIZE.HEIGHT;
+    const orthoWidth = 16;   // Ширина ортогональной проекции
+    const orthoHeight = 9;   // Высота ортогональной проекции
+    const backgroundWidth = orthoWidth;   // 16
+    const backgroundHeight = orthoHeight; // 9
     
     // Размеры линии точно по пикселям
-    const lineWidth = (1680 / 1920) * backgroundWidth;   // 1680px из 1920px = 14.0
-    const lineHeight = (5 / 1080) * backgroundHeight;     // 5px из 1080px = 0.042
+    const lineWidth = (1680 / SCREEN_SIZE.WIDTH) * backgroundWidth;   // 1680px из SCREEN_SIZE.WIDTH
+    const lineHeight = (5 / SCREEN_SIZE.HEIGHT) * backgroundHeight;     // 5px из SCREEN_SIZE.HEIGHT
     
     // Позиция относительно фона (123, 141 - абсолютные координаты от левого верхнего угла)
     // X=123 - это начало линии, нужно добавить половину ширины линии для центрирования
-    const lineX = ((123 / 1920) * backgroundWidth) - (backgroundWidth / 2) + (lineWidth / 2);   // X=123 + половина ширины
-    const lineY = (backgroundHeight / 2) - ((141 / 1080) * backgroundHeight); // Y=141 от верхнего края (инвертируем Y)
+    const lineX = ((123 / SCREEN_SIZE.WIDTH) * backgroundWidth) - (backgroundWidth / 2) + (lineWidth / 2);   // X=123 + половина ширины
+    const lineY = (backgroundHeight / 2) - ((141 / SCREEN_SIZE.HEIGHT) * backgroundHeight); // Y=141 от верхнего края (инвертируем Y)
     
     console.log(`Создаем линию: размер ${lineWidth}x${lineHeight}, позиция (${lineX}, ${lineY})`);
     console.log(`Расчет: 1680/1920=${1680/1920}, 5/1080=${5/1080}`);
@@ -191,19 +197,20 @@ function renderText(text, x, y, color, fontSize, fontFamily, z) {
     textTexture.minFilter = THREE.LinearFilter;
     textTexture.magFilter = THREE.LinearFilter;
     
-    // Размеры относительно камеры рендер-таргета
-    const frustumSize = 8;
-    const aspect = 1920 / 1080;
-    const backgroundWidth = frustumSize * aspect;  // 14.22
-    const backgroundHeight = frustumSize;          // 8
+    // Размеры относительно ортогональной камеры рендер-таргета
+    const aspect = SCREEN_SIZE.WIDTH / SCREEN_SIZE.HEIGHT;
+    const orthoWidth = 16;   // Ширина ортогональной проекции
+    const orthoHeight = 9;   // Высота ортогональной проекции
+    const backgroundWidth = orthoWidth;   // 16
+    const backgroundHeight = orthoHeight; // 9
     
-    // Позиция ЛЕВОГО ВЕРХНЕГО УГЛА текста относительно фона 1920x1080
-    const textLeftX = ((x / 1920) * backgroundWidth) - (backgroundWidth / 2);
-    const textTopY = (backgroundHeight / 2) - ((y / 1080) * backgroundHeight); // Инвертируем Y
+    // Позиция ЛЕВОГО ВЕРХНЕГО УГЛА текста относительно фона SCREEN_SIZE.WIDTHxSCREEN_SIZE.HEIGHT
+    const textLeftX = ((x / SCREEN_SIZE.WIDTH) * backgroundWidth) - (backgroundWidth / 2);
+    const textTopY = (backgroundHeight / 2) - ((y / SCREEN_SIZE.HEIGHT) * backgroundHeight); // Инвертируем Y
     
     // Размер текста
-    const textSize = (fontSize / 1080) * backgroundHeight;
-    const textWidth = (textWidthPx / 1080) * backgroundHeight;
+    const textSize = (fontSize / SCREEN_SIZE.HEIGHT) * backgroundHeight;
+    const textWidth = (textWidthPx / SCREEN_SIZE.HEIGHT) * backgroundHeight;
     
     // Позиция центра текста (для Three.js меша)
     const textX = textLeftX + (textWidth / 2);
