@@ -85,7 +85,15 @@ function initRenderTarget() {
 function createProjectMeshes() {
     // Создаем 4 меша (3 видимых + 1 буферный)
     for (let i = 0; i < 4; i++) {
-        const geometry = new THREE.PlaneGeometry(4.8, 3.6); // Увеличиваем размеры проектов еще больше
+        // Создаем геометрию с правильным соотношением сторон (16:9)
+        // Активный проект: ширина 6.4, высота 3.6 (соотношение 16:9)
+        // Неактивные проекты: ширина 4.8, высота 2.7 (соотношение 16:9, масштаб 0.75)
+        const isActive = i === 1;
+        const baseWidth = 6.4; // Базовая ширина для активного
+        const baseHeight = 3.6; // Базовая высота для активного
+        const scale = isActive ? 1.0 : 0.75; // Неактивные на 25% меньше
+        
+        const geometry = new THREE.PlaneGeometry(baseWidth, baseHeight);
         const material = new THREE.MeshBasicMaterial({
             color: 0xffffff,
             side: THREE.DoubleSide,
@@ -95,13 +103,12 @@ function createProjectMeshes() {
         
         const mesh = new THREE.Mesh(geometry, material);
         
-        // Устанавливаем начальные позиции (увеличиваем для больших проектов)
+        // Устанавливаем начальные позиции с учетом разных размеров
         const positions = [-4.8, 0, 4.8, 9.6]; // Левый, центр, правый, буферный
         mesh.position.set(positions[i], 0, 0);
         mesh.visible = i < 3; // Буферный скрыт
         
         // Применяем правильные масштабы сразу при создании
-        const scale = i === 1 ? 1.0 : 0.8; // Центральный большой, остальные маленькие
         mesh.scale.set(scale, scale, 1);
         
         renderScene.add(mesh);
@@ -726,7 +733,7 @@ function startGalleryAnimation(direction) {
         return;
     }
     
-    // Расстояние между экранами (увеличиваем для больших проектов)
+    // Расстояние между экранами (с учетом новых размеров)
     const screenDistance = 4.8;
     
     // Сохраняем текущие параметры перед началом анимации
