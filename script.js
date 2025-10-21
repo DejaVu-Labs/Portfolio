@@ -24,6 +24,14 @@ const PROJECT_SIZES = {
     INACTIVE_SCALE: 0.45  // Масштаб неактивных проектов
 };
 
+// Позиции проектов
+const PROJECT_POSITIONS = {
+    LEFT: -4.8,      // Левый проект
+    CENTER: 0,       // Центральный проект
+    RIGHT: 4.8,      // Правый проект
+    BUFFER: 9.6      // Буферный проект
+};
+
 // Функция плавности (easing) для анимации
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -109,8 +117,8 @@ function createProjectMeshes() {
         
         const mesh = new THREE.Mesh(geometry, material);
         
-        // Устанавливаем начальные позиции с учетом разных размеров
-        const positions = [-4.8, 0, 4.8, 9.6]; // Левый, центр, правый, буферный
+        // Устанавливаем начальные позиции из констант
+        const positions = [PROJECT_POSITIONS.LEFT, PROJECT_POSITIONS.CENTER, PROJECT_POSITIONS.RIGHT, PROJECT_POSITIONS.BUFFER];
         mesh.position.set(positions[i], 0, 0);
         mesh.visible = i < 3; // Буферный скрыт
         
@@ -762,8 +770,8 @@ function startGalleryAnimation(direction) {
         hiddenScreenIndex = 3;
     }
     
-    // Устанавливаем начальные и целевые позиции в зависимости от направления
-    const positions = [-screenDistance, 0, screenDistance];
+    // Устанавливаем позиции из констант
+    const positions = [PROJECT_POSITIONS.LEFT, PROJECT_POSITIONS.CENTER, PROJECT_POSITIONS.RIGHT];
     
     if (direction === 'next') {
         // Перемещаем скрытый экран за правый край для въезда
