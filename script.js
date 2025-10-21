@@ -22,6 +22,21 @@ const SCREEN_SIZE = {
     HEIGHT: 1080   // Высота экрана в пикселях
 };
 
+// Функции конвертации пикселей в размеры Three.js
+const CONVERT = {
+    // Конвертация ширины из пикселей в единицы Three.js
+    width: (pixels) => (pixels / SCREEN_SIZE.WIDTH) * 16,
+    
+    // Конвертация высоты из пикселей в единицы Three.js
+    height: (pixels) => (pixels / SCREEN_SIZE.HEIGHT) * 9,
+    
+    // Конвертация X позиции из пикселей в единицы Three.js (от левого края)
+    x: (pixels) => (pixels / SCREEN_SIZE.WIDTH) * 16 - 8, // -8 для центрирования
+    
+    // Конвертация Y позиции из пикселей в единицы Three.js (от верхнего края)
+    y: (pixels) => 4.5 - (pixels / SCREEN_SIZE.HEIGHT) * 9 // 4.5 для центрирования, инвертируем Y
+};
+
 // Размеры проектов
 const PROJECT_SIZES = {
     ACTIVE_WIDTH: 6.4,    // Ширина активного проекта
@@ -125,13 +140,12 @@ function createScreenLine() {
     const backgroundHeight = orthoHeight; // 9
     
     // Размеры линии точно по пикселям
-    const lineWidth = (1680 / SCREEN_SIZE.WIDTH) * backgroundWidth;   // 1680px из SCREEN_SIZE.WIDTH
-    const lineHeight = (5 / SCREEN_SIZE.HEIGHT) * backgroundHeight;     // 5px из SCREEN_SIZE.HEIGHT
+    const lineWidth = CONVERT.width(1680);   // 1680px в единицы Three.js
+    const lineHeight = CONVERT.height(5);   // 5px в единицы Three.js
     
     // Позиция относительно фона (123, 141 - абсолютные координаты от левого верхнего угла)
-    // X=123 - это начало линии, нужно добавить половину ширины линии для центрирования
-    const lineX = ((123 / SCREEN_SIZE.WIDTH) * backgroundWidth) - (backgroundWidth / 2) + (lineWidth / 2);   // X=123 + половина ширины
-    const lineY = (backgroundHeight / 2) - ((141 / SCREEN_SIZE.HEIGHT) * backgroundHeight); // Y=141 от верхнего края (инвертируем Y)
+    const lineX = CONVERT.x(123) + (lineWidth / 2);   // X=123 + половина ширины
+    const lineY = CONVERT.y(141); // Y=141 от верхнего края
     
     console.log(`Создаем линию: размер ${lineWidth}x${lineHeight}, позиция (${lineX}, ${lineY})`);
     console.log(`Расчет: 1680/1920=${1680/1920}, 5/1080=${5/1080}`);
@@ -204,13 +218,13 @@ function renderText(text, x, y, color, fontSize, fontFamily, z) {
     const backgroundWidth = orthoWidth;   // 16
     const backgroundHeight = orthoHeight; // 9
     
-    // Позиция ЛЕВОГО ВЕРХНЕГО УГЛА текста относительно фона SCREEN_SIZE.WIDTHxSCREEN_SIZE.HEIGHT
-    const textLeftX = ((x / SCREEN_SIZE.WIDTH) * backgroundWidth) - (backgroundWidth / 2);
-    const textTopY = (backgroundHeight / 2) - ((y / SCREEN_SIZE.HEIGHT) * backgroundHeight); // Инвертируем Y
+    // Позиция ЛЕВОГО ВЕРХНЕГО УГЛА текста относительно фона
+    const textLeftX = CONVERT.x(x);
+    const textTopY = CONVERT.y(y);
     
     // Размер текста
-    const textSize = (fontSize / SCREEN_SIZE.HEIGHT) * backgroundHeight;
-    const textWidth = (textWidthPx / SCREEN_SIZE.HEIGHT) * backgroundHeight;
+    const textSize = CONVERT.height(fontSize);
+    const textWidth = CONVERT.height(textWidthPx);
     
     // Позиция центра текста (для Three.js меша)
     const textX = textLeftX + (textWidth / 2);
