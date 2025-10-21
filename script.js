@@ -152,9 +152,10 @@ function createScreenLine() {
     console.log('Линия добавлена в renderScene, количество объектов:', renderScene.children.length);
 }
 
-// Создание текста на экране PSP
-function createScreenText() {
-    console.log('createScreenText вызвана, renderScene:', renderScene);
+// Функция рендеринга текста с параметрами
+function renderText(text, x, y, color, fontSize, fontFamily, z) {
+    console.log(`renderText вызвана: "${text}", позиция (${x}, ${y}), цвет ${color}, размер ${fontSize}px, шрифт ${fontFamily}, Z=${z}`);
+    
     if (!renderScene) {
         console.log('renderScene не создан, выходим');
         return;
@@ -164,28 +165,26 @@ function createScreenText() {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     
-    // Размеры Canvas (высокое разрешение для четкости)
-    const canvasWidth = 800;
-    const canvasHeight = 200;
+    // Настройка шрифта для измерения
+    context.font = `${fontSize}px ${fontFamily}`;
+    
+    // Размеры Canvas точно по размеру текста
+    const textWidthPx = context.measureText(text).width;
+    const textHeightPx = fontSize;
+    
+    const canvasWidth = Math.ceil(textWidthPx);
+    const canvasHeight = Math.ceil(textHeightPx);
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
     
-    // Настройки текста - рендерим точно в 55pt
-    const fontSize = 55;
-    const fontFamily = 'Arial';
-    const text = 'My Projects';
-    
     // Настройка шрифта
     context.font = `${fontSize}px ${fontFamily}`;
-    context.fillStyle = '#FFFFFF';
+    context.fillStyle = color;
     context.textAlign = 'left';
     context.textBaseline = 'top';
     
     // Рендерим текст на Canvas
-    context.fillText(text, 0, fontSize); // Смещаем вниз на размер шрифта
-    
-    console.log(`Canvas: ${canvasWidth}x${canvasHeight}, шрифт: ${fontSize}px, текст: "${text}"`);
-    console.log(`Измеряем текст на Canvas: ширина = ${context.measureText(text).width}px`);
+    context.fillText(text, 0, fontSize);
     
     // Создаем текстуру из Canvas
     const textTexture = new THREE.CanvasTexture(canvas);
@@ -198,31 +197,17 @@ function createScreenText() {
     const backgroundWidth = frustumSize * aspect;  // 14.22
     const backgroundHeight = frustumSize;          // 8
     
-    // Параметры текста: X=238, Y=50 от левого верхнего угла экрана 1920x1080
     // Позиция ЛЕВОГО ВЕРХНЕГО УГЛА текста относительно фона 1920x1080
-    const textLeftX = ((238 / 1920) * backgroundWidth) - (backgroundWidth / 2);
-    const textTopY = (backgroundHeight / 2) - ((50 / 1080) * backgroundHeight); // Инвертируем Y
+    const textLeftX = ((x / 1920) * backgroundWidth) - (backgroundWidth / 2);
+    const textTopY = (backgroundHeight / 2) - ((y / 1080) * backgroundHeight); // Инвертируем Y
     
-    // Размер текста точно 55pt - синхронизируем с Canvas
-    // Canvas рендерит в 55px, Canvas размер 200px высота
-    // Нужно масштабировать относительно Canvas, а не экрана
-    const textSize = (55 / 200) * backgroundHeight; // 55px из 200px Canvas высоты
-    const textWidth = (289 / 200) * backgroundHeight; // 289px ширина из 200px Canvas высоты
+    // Размер текста
+    const textSize = (fontSize / 1080) * backgroundHeight;
+    const textWidth = (textWidthPx / 1080) * backgroundHeight;
     
     // Позиция центра текста (для Three.js меша)
-    const textX = textLeftX + (textWidth / 2); // Центр = левый край + половина ширины
-    const textY = textTopY - (textSize / 2);   // Центр = верхний край - половина высоты
-    
-    console.log(`Позиция текста: X=238, Y=50 от левого верхнего угла`);
-    console.log(`Левый верхний угол: textLeftX=${textLeftX}, textTopY=${textTopY}`);
-    console.log(`Центр текста: textX=${textX}, textY=${textY}`);
-    console.log(`Фон границы: от ${-backgroundWidth/2} до ${backgroundWidth/2} по X, от ${-backgroundHeight/2} до ${backgroundHeight/2} по Y`);
-    console.log(`Текст границы: от ${textLeftX} до ${textLeftX + textWidth} по X, от ${textTopY - textSize} до ${textTopY} по Y`);
-    
-    console.log(`Создаем текст: "My Projects", размер ${textSize}x${textWidth}, позиция (${textX}, ${textY})`);
-    console.log(`Расчет размера: 73px из 1080px = ${73/1080}, backgroundHeight = ${backgroundHeight}`);
-    console.log(`Размер в единицах Three.js: ${textSize}, что составляет ${(textSize/backgroundHeight)*100}% от высоты экрана`);
-    console.log(`Canvas размер: ${canvasWidth}x${canvasHeight}, соотношение: ${canvasWidth/canvasHeight}`);
+    const textX = textLeftX + (textWidth / 2);
+    const textY = textTopY - (textSize / 2);
     
     // Создаем текстовую геометрию с текстурой
     const textGeometry = new THREE.PlaneGeometry(textWidth, textSize);
@@ -234,11 +219,25 @@ function createScreenText() {
     });
     
     const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-    textMesh.position.set(textX, textY, 1.5); // Выше линии
+    textMesh.position.set(textX, textY, z);
     textMesh.visible = true;
     
     renderScene.add(textMesh);
-    console.log('Текст добавлен в renderScene, количество объектов:', renderScene.children.length);
+    console.log(`Текст "${text}" добавлен в renderScene`);
+    
+    return textMesh;
+}
+
+// Создание текста на экране PSP
+function createScreenText() {
+    console.log('createScreenText вызвана, renderScene:', renderScene);
+    if (!renderScene) {
+        console.log('renderScene не создан, выходим');
+        return;
+    }
+    
+    // Создаем текст "My Projects" с параметрами
+    renderText('My Projects', 238, 50, '#FFFFFF', 55, 'Arial', 1.5);
 }
 
 // Создание мешей проектов для рендер-таргета
