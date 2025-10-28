@@ -855,10 +855,19 @@ function handleInteraction(event) {
         let userData = button.userData;
         let buttonToAnimate = button;
         
-        // Если это группа (крестик), получаем userData из родителя
-        if (!userData.action && button.parent.userData.action) {
-            userData = button.parent.userData;
-            buttonToAnimate = button.parent; // Анимируем всю группу
+        // Если это часть группы (например, одна из частей крестика), 
+        // ищем родительскую группу с userData.action
+        if (!userData.action) {
+            // Проходим по родителям, пока не найдем объект с action
+            let parent = button.parent;
+            while (parent && !userData.action) {
+                if (parent.userData && parent.userData.action) {
+                    userData = parent.userData;
+                    buttonToAnimate = parent;
+                    break;
+                }
+                parent = parent.parent;
+            }
         }
 
         handleButtonClick(userData.action);
